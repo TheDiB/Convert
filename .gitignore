@@ -55,3 +55,7 @@ CodeCoverage/
 *.VisualState.xml
 TestResult.xml
 nunit-*.xml
+/.vs
+/Convert/.vs/Convert.slnx
+/Convert/.vs/ProjectEvaluation
+/Convert/Convert.UI/ffmpeg

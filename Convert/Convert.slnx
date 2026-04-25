@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="Convert.Core/Convert.Core.csproj" />
+  <Project Path="Convert.Models/Convert.Models.csproj" />
+  <Project Path="Convert.UI/Convert.UI.csproj" />
+</Solution>
