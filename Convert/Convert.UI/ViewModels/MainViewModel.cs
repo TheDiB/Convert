@@ -14,6 +14,7 @@ using static Convert.Core.TranscodeJob;
 public class MainViewModel : INotifyPropertyChanged
 {
     public ObservableCollection<JobViewModel> Jobs { get; } = new();
+    private readonly SemaphoreSlim _parallelLimiter = new SemaphoreSlim(4);
     public OptionsViewModel OptionsVM { get; }
 
     private JobViewModel _selectedJob;
@@ -24,6 +25,10 @@ public class MainViewModel : INotifyPropertyChanged
     }
 
     public TranscodeOptions Options { get; } = new();
+    public int MaxParallelJobs
+    {
+        get => _parallelLimiter.CurrentCount;
+    }
 
     private readonly FFprobeService _probe;
     private readonly FFmpegEngine _engine;
@@ -87,18 +92,30 @@ public class MainViewModel : INotifyPropertyChanged
 
     private async Task TranscodeAllAsync()
     {
-        foreach (var job in Jobs)
-        {
-            job.Job.Mode = JobMode.Transcode;
-            await job.Job.RunAsync(
-                    _probe,
-                    _engine,
-                    Options,
-                    log => job.AppendLog(log));
+        var tasks = new List<Task>();
 
-            job.RefreshStatus();
+        foreach (var jobVM in Jobs)
+        {
+            tasks.Add(RunJobWithLimit(jobVM, JobMode.Transcode));
+        }
+
+        await Task.WhenAll(tasks);
+    }
+
+    private async Task RunJobWithLimit(JobViewModel jobVM, JobMode mode)
+    {
+        await _parallelLimiter.WaitAsync();
+        try
+        {
+            jobVM.Job.Mode = mode;
+            await jobVM.Job.RunAsync(_probe, _engine, Options, log => jobVM.AppendLog(log));
+        }
+        finally
+        {
+            _parallelLimiter.Release();
         }
     }
+
 
     private void RemoveJob(JobViewModel jobVM)
     {
