@@ -5,9 +5,10 @@ using Convert.UI.ViewModels;
 using Microsoft.Win32;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
+using System.Reflection;
 using System.Runtime.CompilerServices;
-using System.Windows.Documents;
 using System.Windows.Input;
 using static Convert.Core.TranscodeJob;
 
@@ -18,6 +19,19 @@ public class MainViewModel : INotifyPropertyChanged
     public OptionsViewModel OptionsVM { get; }
 
     private JobViewModel _selectedJob;
+    private SettingsService _settings;
+
+    public string AppVersion { get; private set; }
+
+    public string SelectedContainer { get; private set; }
+    public string SelectedVideoCodec { get; private set; }
+    public string SelectedAudioCodec { get; private set; }
+    public bool ConvertDtsToEac3 { get; private set; }
+    public bool ConvertMovTextToSrt { get; private set; }
+    public string PreferredVideoEngine { get; private set; }
+
+    //public int MaxParallelJobs { get; private set; }
+
     public JobViewModel SelectedJob
     {
         get => _selectedJob;
@@ -38,8 +52,22 @@ public class MainViewModel : INotifyPropertyChanged
     public ICommand TranscodeAllCommand { get; }
     public ICommand ClearCommand { get; }
 
-    public MainViewModel()
+    public MainViewModel(SettingsService settings)
     {
+        _settings = settings;
+
+        var version = FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location);
+        var fileVersion = version.FileVersion;       // 0.1.116.1742
+        AppVersion = string.Concat("Convert v", fileVersion);
+
+        // appliquer les valeurs par défaut
+        SelectedContainer = _settings.Settings.DefaultContainer;
+        SelectedVideoCodec = _settings.Settings.DefaultVideoCodec;
+        SelectedAudioCodec = _settings.Settings.DefaultAudioCodec;
+        ConvertDtsToEac3 = _settings.Settings.ConvertDtsToEac3;
+        ConvertMovTextToSrt = _settings.Settings.ConvertMovTextToSrt;
+        //MaxParallelJobs = _settings.Settings.MaxParallelJobs;
+
         OptionsVM = new OptionsViewModel(Options);
         Jobs = new ObservableCollection<JobViewModel>();
         var ffmpegPath = Path.Combine(AppContext.BaseDirectory, "ffmpeg", "ffmpeg.exe");
@@ -51,6 +79,21 @@ public class MainViewModel : INotifyPropertyChanged
         AnalyzeAllCommand = new RelayCommand(async _ => await AnalyzeAllAsync());
         TranscodeAllCommand = new RelayCommand(async _ => await TranscodeAllAsync());
         ClearCommand = new RelayCommand(_ => ClearAll());
+    }
+
+    public void ReloadSettings()
+    {
+        // Réappliquer les valeurs par défaut
+        SelectedContainer = _settings.Settings.DefaultContainer;
+        SelectedVideoCodec = _settings.Settings.DefaultVideoCodec;
+        SelectedAudioCodec = _settings.Settings.DefaultAudioCodec;
+
+        ConvertDtsToEac3 = _settings.Settings.ConvertDtsToEac3;
+        ConvertMovTextToSrt = _settings.Settings.ConvertMovTextToSrt;
+
+        //MaxParallelJobs = _settings.Settings.MaxParallelJobs;
+
+        PreferredVideoEngine = _settings.Settings.PreferredVideoEngine;
     }
 
     private async Task AddFileAsync()

@@ -8,6 +8,8 @@
     <UseWPF>true</UseWPF>
     <AssemblyVersion>0.1.0.0</AssemblyVersion>
     <FileVersion>0.1.0.0</FileVersion>
+    <BaseOutputPath>..\..\bin</BaseOutputPath>
+    <StartupObject>Convert.UI.App</StartupObject>
   </PropertyGroup>
 
   <ItemGroup>
@@ -17,7 +19,6 @@
 
   <ItemGroup>
     <Folder Include="ffmpeg\" />
-    <Folder Include="Views\" />
   </ItemGroup>
 
   <ItemGroup>

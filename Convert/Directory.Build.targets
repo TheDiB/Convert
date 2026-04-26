@@ -1,0 +1,16 @@
+﻿<Project>
+	<PropertyGroup>
+		<!-- Numéro du jour dans l'année -->
+		<BuildNumber>$([System.DateTime]::Now.DayOfYear)</BuildNumber>
+
+		<!-- Révision basée sur l'heure -->
+		<RevisionNumber>$([System.DateTime]::Now.ToString("HHmm"))</RevisionNumber>
+
+		<!-- Version finale -->
+		<Version>$(MajorVersion).$(MinorVersion).$(BuildNumber).$(RevisionNumber)</Version>
+		<FileVersion>$(Version)</FileVersion>
+
+		<!-- AssemblyVersion doit rester stable -->
+		<AssemblyVersion>$(MajorVersion).$(MinorVersion).0.0</AssemblyVersion>
+	</PropertyGroup>
+</Project>
