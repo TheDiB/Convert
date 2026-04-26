@@ -2,7 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:material="http://materialdesigninxaml.net/winfx/xaml/themes"
-        Title="{Binding AppVersion, Mode=OneTime}" Height="800" Width="1200">
+        Title="{Binding AppVersion, Mode=OneTime}" Height="800" Width="1200" ResizeMode="NoResize">
 
     <Grid Margin="10">
         <Grid.RowDefinitions>
@@ -12,50 +12,17 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <GroupBox Grid.Row="0" Header="Options de transcodage" Margin="0 0 0 10">
-            <StackPanel Orientation="Horizontal" Margin="10">
-
-                <!-- Conteneur -->
-                <StackPanel Margin="0 0 20 0">
-                    <TextBlock Text="Conteneur"/>
-                    <ComboBox ItemsSource="{Binding OptionsVM.Containers}"
-                      SelectedItem="{Binding OptionsVM.Options.OutputContainer}"/>
-                </StackPanel>
-
-                <!-- Codec vidéo -->
-                <StackPanel Margin="0 0 20 0">
-                    <TextBlock Text="Codec vidéo"/>
-                    <ComboBox ItemsSource="{Binding OptionsVM.VideoCodecs}"
-                      SelectedItem="{Binding OptionsVM.Options.VideoCodec}"/>
-                </StackPanel>
-
-                <!-- Codec audio -->
-                <StackPanel Margin="0 0 20 0">
-                    <TextBlock Text="Codec audio"/>
-                    <ComboBox ItemsSource="{Binding OptionsVM.AudioCodecs}"
-                      SelectedItem="{Binding OptionsVM.Options.AudioCodec}"/>
-                </StackPanel>
-
-                <!-- DTS → EAC3 -->
-                <CheckBox Content="Convertir DTS → EAC3"
-                  Margin="20 0 0 0"
-                  IsChecked="{Binding OptionsVM.Options.ConvertDtsToEac3}"/>
-
-                <!-- mov_text → SRT -->
-                <CheckBox Content="mov_text → SRT"
-                  Margin="20 0 0 0"
-                  IsChecked="{Binding OptionsVM.Options.ConvertMovTextToSrt}"/>
-
-            </StackPanel>
-        </GroupBox>
-
         <!-- Barre d'actions -->
-        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0 0 0 10">
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0 0 0 10">
             <Button Content="Ajouter un fichier…" Width="150"
                     Command="{Binding AddFileCommand}"/>
 
-            <Button Content="Analyser" Command="{Binding AnalyzeAllCommand}" Margin="10 0 10 0"/>
-            <Button Content="Transcoder" Command="{Binding TranscodeAllCommand}"/>
+            <Button Content="Ajouter un dossier..."
+                    Command="{Binding AddFolderCommand}"
+                    Margin="10 0 10 0"/>
+
+            <Button Content="Analyser" Command="{Binding AnalyzeAllCommand}" IsEnabled="{Binding CanAnalyze}" Margin="10 0 10 0"/>
+            <Button Content="Transcoder" Command="{Binding TranscodeAllCommand}" IsEnabled="{Binding CanTranscode}" Margin="10 0 10 0"/>
 
             <Button Command="{Binding ClearCommand}" ToolTip="Effacer la file" Margin="10 0 10 0">
                 <StackPanel Orientation="Horizontal">
@@ -68,61 +35,108 @@
                     <material:PackIcon Kind="Cog" Width="20" Height="20"/>
                 </StackPanel>
             </Button>
+
+            <Button ToolTip="A propos de Convert" Margin="10 0 0 0" Click="OpenAbout_Click">
+                <StackPanel Orientation="Horizontal">
+                    <material:PackIcon Kind="Information" Width="20" Height="20"/>
+                </StackPanel>
+            </Button>
+
+            <Button ToolTip="Quitter Convert" Margin="10 0 0 0" Click="Quit_Click">
+                <StackPanel Orientation="Horizontal">
+                    <material:PackIcon Kind="ExitToApp" Width="20" Height="20"/>
+                </StackPanel>
+            </Button>
         </StackPanel>
 
+        <GroupBox Grid.Row="1" Header="Options de transcodage" Margin="0 0 0 10">
+            <StackPanel Orientation="Horizontal" Margin="10">
+
+                <!-- Conteneur -->
+                <StackPanel Margin="0 0 20 0">
+                    <TextBlock Text="Conteneur" ToolTip="Sélectionnez le conteneur de sortie."/>
+                    <ComboBox ItemsSource="{Binding OptionsVM.Containers}"
+                      SelectedItem="{Binding OptionsVM.Options.OutputContainer}"/>
+                </StackPanel>
+
+                <!-- Codec vidéo -->
+                <StackPanel Margin="0 0 20 0">
+                    <TextBlock Text="Codec vidéo" ToolTip="Sélectionnez le codec vidéo de sortie."/>
+                    <ComboBox ItemsSource="{Binding OptionsVM.VideoCodecs}"
+                      SelectedItem="{Binding OptionsVM.Options.VideoCodec}"/>
+                </StackPanel>
+
+                <!-- Codec audio -->
+                <StackPanel Margin="0 0 20 0">
+                    <TextBlock Text="Codec audio" ToolTip="Sélectionnez le codec audio de sortie."/>
+                    <ComboBox ItemsSource="{Binding OptionsVM.AudioCodecs}"
+                      SelectedItem="{Binding OptionsVM.Options.AudioCodec}"/>
+                </StackPanel>
+
+                <!-- mov_text → SRT -->
+                <CheckBox Content="Sous-titres mov_text → SRT" ToolTip="Convertir les sous-titres mov_text en SRT"
+                  Margin="20 0 0 0"
+                  IsChecked="{Binding OptionsVM.Options.ConvertMovTextToSrt}"/>
+
+            </StackPanel>
+        </GroupBox>
+
         <!-- Liste des jobs -->
-        <DataGrid Grid.Row="2"
+        <GroupBox Grid.Row="2" Header="File d'attente" Margin="0 0 0 0">
+            <DataGrid 
                   ItemsSource="{Binding Jobs}"
                   SelectedItem="{Binding SelectedJob}"
                   AutoGenerateColumns="False">
-            <DataGrid.Columns>
-                <DataGridTextColumn Header="Fichier" Binding="{Binding FileName, Mode=OneWay}" Width="*"/>
-                <DataGridTextColumn Header="Statut" Binding="{Binding Status, Mode=OneWay}" Width="150"/>
-                <DataGridTemplateColumn Header="Progression" Width="200">
-                    <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate>
-                            <ProgressBar Minimum="0" Maximum="1"
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Fichier" Binding="{Binding FileName, Mode=OneWay}" Width="*"/>
+                    <DataGridTextColumn Header="Statut" Binding="{Binding Status, Mode=OneWay}" Width="150"/>
+                    <DataGridTemplateColumn Header="Progression" Width="200">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <ProgressBar Minimum="0" Maximum="1"
                              Value="{Binding Progress, Mode=OneWay}"
                              Height="16"/>
-                        </DataTemplate>
-                    </DataGridTemplateColumn.CellTemplate>
-                </DataGridTemplateColumn>
-                <DataGridTemplateColumn Header="Actions" Width="300">
-                    <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate>
-                            <StackPanel Orientation="Horizontal">
-                                <Button Command="{Binding AnalyzeCommand}" ToolTip="Lancer l'analyse">
-                                    <StackPanel Orientation="Horizontal">
-                                        <material:PackIcon Kind="Magnify" Width="18" Height="18" Margin="0 0 5 0"/>
-                                    </StackPanel>
-                                </Button>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTemplateColumn Header="Actions" Width="300">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal">
+                                    <Button Command="{Binding AnalyzeCommand}" ToolTip="Lancer l'analyse">
+                                        <StackPanel Orientation="Horizontal">
+                                            <material:PackIcon Kind="Magnify" Width="18" Height="18" Margin="0 0 5 0"/>
+                                        </StackPanel>
+                                    </Button>
 
-                                <Button ToolTip="Lancer le transcodage" Command="{Binding TranscodeCommand}">
-                                    <StackPanel Orientation="Horizontal">
-                                        <material:PackIcon Kind="Server" Width="18" Height="18" Margin="0 0 5 0"/>
-                                    </StackPanel>
-                                </Button>
+                                    <Button ToolTip="Lancer le transcodage" Command="{Binding TranscodeCommand}">
+                                        <StackPanel Orientation="Horizontal">
+                                            <material:PackIcon Kind="Server" Width="18" Height="18" Margin="0 0 5 0"/>
+                                        </StackPanel>
+                                    </Button>
 
-                                <Button Command="{Binding StopCommand}" IsEnabled="{Binding IsRunning}" ToolTip="Arrêter le transcodage">
-                                    <StackPanel Orientation="Horizontal">
-                                        <material:PackIcon Kind="Stop" Width="18" Height="18" Margin="0 0 5 0"/>
-                                    </StackPanel>
-                                </Button>
+                                    <Button Command="{Binding StopCommand}" IsEnabled="{Binding IsRunning}" ToolTip="Arrêter le transcodage">
+                                        <StackPanel Orientation="Horizontal">
+                                            <material:PackIcon Kind="Stop" Width="18" Height="18" Margin="0 0 5 0"/>
+                                        </StackPanel>
+                                    </Button>
 
-                                <Button Command="{Binding DeleteCommand}" ToolTip="Supprimer de la file d'attente">
-                                    <StackPanel Orientation="Horizontal">
-                                        <material:PackIcon Kind="Delete" Width="18" Height="18" Margin="0 0 5 0"/>
-                                    </StackPanel>
-                                </Button>
-                            </StackPanel>
-                        </DataTemplate>
-                    </DataGridTemplateColumn.CellTemplate>
-                </DataGridTemplateColumn>
-            </DataGrid.Columns>
-        </DataGrid>
+                                    <Button Command="{Binding DeleteCommand}" ToolTip="Supprimer de la file d'attente">
+                                        <StackPanel Orientation="Horizontal">
+                                            <material:PackIcon Kind="Delete" Width="18" Height="18" Margin="0 0 5 0"/>
+                                        </StackPanel>
+                                    </Button>
+                                </StackPanel>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                </DataGrid.Columns>
+            </DataGrid>
+        </GroupBox>
 
         <!-- Logs du job sélectionné -->
-        <TextBox Grid.Row="3"
+        <GroupBox Grid.Row="3" Header="Sortie" Margin="0 0 0 0">
+            <TextBox
                  x:Name="LogTextBox"
                  Text="{Binding SelectedJob.Log, Mode=OneWay}"
                  FontFamily="Consolas"
@@ -130,5 +144,6 @@
                  IsReadOnly="True"
                  TextWrapping="Wrap"
                  VerticalScrollBarVisibility="Auto"/>
+        </GroupBox>
     </Grid>
 </Window>

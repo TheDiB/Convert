@@ -50,7 +50,7 @@
 
                     <TextBlock Text="Valeurs par défaut" FontWeight="Bold"/>
 
-                    <ComboBox ItemsSource="{Binding Containers}"
+                    <!--<ComboBox ItemsSource="{Binding Containers}"
                               SelectedItem="{Binding DefaultContainer}"
                               material:HintAssist.Hint="Conteneur par défaut"/>
 
@@ -60,18 +60,18 @@
 
                     <ComboBox ItemsSource="{Binding AudioCodecs}"
                               SelectedItem="{Binding DefaultAudioCodec}"
-                              material:HintAssist.Hint="Codec audio par défaut"/>
+                              material:HintAssist.Hint="Codec audio par défaut"/>-->
 
-                    <CheckBox Content="Convertir DTS → EAC3"
+                    <CheckBox Content="Forcer la conversion DTS → EAC3" ToolTip="Forcer la conversion des pistes DTS vers EAC3 même si un codec différent est sélectionné"
                               IsChecked="{Binding ConvertDtsToEac3}"/>
 
-                    <CheckBox Content="Convertir mov_text → SRT"
-                              IsChecked="{Binding ConvertMovTextToSrt}"/>
+                    <!--<CheckBox Content="Convertir mov_text → SRT"
+                              IsChecked="{Binding ConvertMovTextToSrt}"/>-->
                 </StackPanel>
             </TabItem>
 
             <!-- Performance -->
-            <TabItem Header="Performance">
+            <!--<TabItem Header="Performance">
                 <StackPanel Margin="20">
 
                     <TextBlock Text="Jobs en parallèle" FontWeight="Bold"/>
@@ -87,7 +87,7 @@
                               SelectedItem="{Binding PreferredVideoEngine}"
                               material:HintAssist.Hint="Moteur vidéo"/>
                 </StackPanel>
-            </TabItem>
+            </TabItem>-->
 
             <!-- FFmpeg -->
             <TabItem Header="FFmpeg">

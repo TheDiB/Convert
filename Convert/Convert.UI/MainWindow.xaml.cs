@@ -34,5 +34,20 @@ namespace Convert.UI
             // Après fermeture : recharger les paramètres dans le MainViewModel
             ((MainViewModel)DataContext).ReloadSettings();
         }
+
+        private void OpenAbout_Click(object sender, RoutedEventArgs e)
+        {
+            var vm = new AboutViewModel();
+            var win = new AboutWindow(vm)
+            {
+                Owner = this
+            };
+            win.ShowDialog();
+        }
+
+        private void Quit_Click(object sender, RoutedEventArgs e)
+        {
+            this.Close();
+        }
     }
 }

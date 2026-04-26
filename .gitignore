@@ -61,3 +61,4 @@ nunit-*.xml
 /Convert/Convert.UI/ffmpeg
 /Convert/Convert.UI/ffmpeg/ffmpeg.exe
 /Convert/Convert.UI/ffmpeg/ffprobe.exe
+/Convert/Convert.UI/Convert.UI.csproj.user

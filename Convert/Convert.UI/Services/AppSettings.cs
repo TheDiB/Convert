@@ -5,11 +5,13 @@
         public string Theme { get; set; } = "Dark";
         public string PrimaryColor { get; set; } = "DeepPurple";
 
+        public string SupportedFileTypes { get; set; } = "mkv,mp4,mov,avi,ts,webm";
+
         public string DefaultContainer { get; set; } = "mkv";
         public string DefaultVideoCodec { get; set; } = "copy";
         public string DefaultAudioCodec { get; set; } = "copy";
 
-        public bool ConvertDtsToEac3 { get; set; } = true;
+        public bool ConvertDtsToEac3 { get; set; } = false;
         public bool ConvertMovTextToSrt { get; set; } = true;
 
         public int MaxParallelJobs { get; set; } = 2;

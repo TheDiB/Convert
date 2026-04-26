@@ -10,6 +10,7 @@ using System.IO;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
+
 using static Convert.Core.TranscodeJob;
 
 public class MainViewModel : INotifyPropertyChanged
@@ -30,7 +31,8 @@ public class MainViewModel : INotifyPropertyChanged
     public bool ConvertMovTextToSrt { get; private set; }
     public string PreferredVideoEngine { get; private set; }
 
-    //public int MaxParallelJobs { get; private set; }
+    public bool CanTranscode => Jobs.Any();
+    public bool CanAnalyze => Jobs.Any();
 
     public JobViewModel SelectedJob
     {
@@ -48,6 +50,7 @@ public class MainViewModel : INotifyPropertyChanged
     private readonly FFmpegEngine _engine;
 
     public ICommand AddFileCommand { get; }
+    public ICommand AddFolderCommand { get; }
     public ICommand AnalyzeAllCommand { get; }
     public ICommand TranscodeAllCommand { get; }
     public ICommand ClearCommand { get; }
@@ -57,8 +60,7 @@ public class MainViewModel : INotifyPropertyChanged
         _settings = settings;
 
         var version = FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location);
-        var fileVersion = version.FileVersion;       // 0.1.116.1742
-        AppVersion = string.Concat("Convert v", fileVersion);
+        AppVersion = string.Concat("Convert v", version.FileMajorPart, '.', version.FileMinorPart);
 
         // appliquer les valeurs par défaut
         SelectedContainer = _settings.Settings.DefaultContainer;
@@ -66,7 +68,6 @@ public class MainViewModel : INotifyPropertyChanged
         SelectedAudioCodec = _settings.Settings.DefaultAudioCodec;
         ConvertDtsToEac3 = _settings.Settings.ConvertDtsToEac3;
         ConvertMovTextToSrt = _settings.Settings.ConvertMovTextToSrt;
-        //MaxParallelJobs = _settings.Settings.MaxParallelJobs;
 
         OptionsVM = new OptionsViewModel(Options);
         Jobs = new ObservableCollection<JobViewModel>();
@@ -76,9 +77,16 @@ public class MainViewModel : INotifyPropertyChanged
         _engine = new FFmpegEngine(ffmpegPath);
 
         AddFileCommand = new RelayCommand(async _ => await AddFileAsync());
+        AddFolderCommand = new RelayCommand(_ => AddFolder());
         AnalyzeAllCommand = new RelayCommand(async _ => await AnalyzeAllAsync());
         TranscodeAllCommand = new RelayCommand(async _ => await TranscodeAllAsync());
         ClearCommand = new RelayCommand(_ => ClearAll());
+
+        Jobs.CollectionChanged += (_, __) =>
+        {
+            OnPropertyChanged(nameof(CanTranscode));
+            OnPropertyChanged(nameof(CanAnalyze));
+        };
     }
 
     public void ReloadSettings()
@@ -100,17 +108,36 @@ public class MainViewModel : INotifyPropertyChanged
     {
         var dialog = new OpenFileDialog
         {
-            Filter = "Vidéos|*.mkv;*.mp4;*.mov;*.avi;*.ts;*.webm"
+            Filter = $"Vidéos|{string.Join(";", _settings.Settings.SupportedFileTypes.Split(',').Select(ext => $"*.{ext}"))}"
         };
 
         if (dialog.ShowDialog() == true)
         {
-            var job = new TranscodeJob(dialog.FileName);
-            job.SetPending();
-            var vm = new JobViewModel(job, RemoveJob, AnalyzeOneAsync, TranscodeOneAsync);
-            Jobs.Add(vm);
-            //SelectedJob = vm;
-            //vm.RefreshStatus();
+            AddJobFromFile(dialog.FileName);
+        }
+    }
+
+    private async void AddFolder()
+    {
+        var dialog = new OpenFolderDialog
+        {
+            Multiselect = false,
+            Title = "Sélectionnez un dossier"
+        };
+        bool? result = dialog.ShowDialog();
+        if (result == true)
+        {
+            var path = dialog.FolderName;
+            var validExtensions = _settings.Settings.SupportedFileTypes.Split(',').Select(ext => $".{ext}").ToArray();
+
+            var files = Directory
+                .EnumerateFiles(path, "*.*", SearchOption.AllDirectories)
+                .Where(f => validExtensions.Contains(Path.GetExtension(f).ToLower()));
+
+            foreach (var file in files)
+            {
+                AddJobFromFile(file);
+            }
         }
     }
 
@@ -159,6 +186,16 @@ public class MainViewModel : INotifyPropertyChanged
         }
     }
 
+    private void AddJobFromFile(string filePath)
+    {
+        if (Jobs.Any(j => j.FileName == Path.GetFileName(filePath)))
+            return;
+
+        var job = new TranscodeJob(filePath);
+        job.SetPending();
+        var vm = new JobViewModel(job, RemoveJob, AnalyzeOneAsync, TranscodeOneAsync);
+        Jobs.Add(vm);
+    }
 
     private void RemoveJob(JobViewModel jobVM)
     {
@@ -187,5 +224,4 @@ public class MainViewModel : INotifyPropertyChanged
         jobVM.Job.Mode = JobMode.Transcode;
         await jobVM.Job.RunAsync(_probe, _engine, Options, log => jobVM.AppendLog(log));
     }
-
 }
