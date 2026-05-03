@@ -26,32 +26,6 @@ namespace Convert.UI.ViewModels
         public ObservableCollection<string> AudioCodecs { get; } = new ObservableCollection<string> { "copy", "aac", "ac3", "eac3" };
         public ObservableCollection<string> VideoEngines { get; } = new ObservableCollection<string> { "CPU", "NVENC", "QSV", "AMF" };
 
-        public SettingsViewModel(SettingsService service)
-        {
-            _service = service;
-
-            // Charger les valeurs dans le VM
-            Theme = _service.Settings.Theme;
-            PrimaryColor = _service.Settings.PrimaryColor;
-            DefaultContainer = _service.Settings.DefaultContainer;
-            DefaultVideoCodec = _service.Settings.DefaultVideoCodec;
-            DefaultAudioCodec = _service.Settings.DefaultAudioCodec;
-
-            ConvertDtsToEac3 = _service.Settings.ConvertDtsToEac3;
-            ConvertMovTextToSrt = _service.Settings.ConvertMovTextToSrt;
-
-            MaxParallelJobs = _service.Settings.MaxParallelJobs;
-
-            PreferredVideoEngine = _service.Settings.PreferredVideoEngine;
-
-            FfmpegPath = _service.Settings.FfmpegPath;
-            FfprobePath = _service.Settings.FfprobePath;
-
-            AutoDownloadFfmpeg = _service.Settings.AutoDownloadFfmpeg;
-
-            SaveCommand = new RelayCommand(_ => Save());
-        }
-
         // --- Propriétés bindables ---
         private string _theme;
         public string Theme
@@ -94,11 +68,43 @@ namespace Convert.UI.ViewModels
         public int MaxParallelJobs { get; set; }
 
         public string PreferredVideoEngine { get; set; }
+        public string SupportedFileTypes { get; set; }
 
         public string FfmpegPath { get; set; }
         public string FfprobePath { get; set; }
+        public string FfmpegReleaseURL { get; set; }
+
 
         public bool AutoDownloadFfmpeg { get; set; }
+
+        public SettingsViewModel(SettingsService service)
+        {
+            _service = service;
+
+            // Charger les valeurs dans le VM
+            Theme = _service.Settings.Theme;
+            PrimaryColor = _service.Settings.PrimaryColor;
+            DefaultContainer = _service.Settings.DefaultContainer;
+            DefaultVideoCodec = _service.Settings.DefaultVideoCodec;
+            DefaultAudioCodec = _service.Settings.DefaultAudioCodec;
+
+            ConvertDtsToEac3 = _service.Settings.ConvertDtsToEac3;
+            ConvertMovTextToSrt = _service.Settings.ConvertMovTextToSrt;
+
+            MaxParallelJobs = _service.Settings.MaxParallelJobs;
+
+            PreferredVideoEngine = _service.Settings.PreferredVideoEngine;
+            SupportedFileTypes = _service.Settings.SupportedFileTypes;
+
+            FfmpegPath = _service.Settings.FfmpegPath;
+            FfprobePath = _service.Settings.FfprobePath;
+
+            AutoDownloadFfmpeg = _service.Settings.AutoDownloadFfmpeg;
+            FfmpegReleaseURL = _service.Settings.FFmpegReleaseURL;
+
+            SaveCommand = new RelayCommand(_ => Save());
+        }
+
 
         // --- Commande Save ---
         public ICommand SaveCommand { get; }
@@ -118,11 +124,13 @@ namespace Convert.UI.ViewModels
             _service.Settings.MaxParallelJobs = MaxParallelJobs;
 
             _service.Settings.PreferredVideoEngine = PreferredVideoEngine;
+            _service.Settings.SupportedFileTypes = SupportedFileTypes;
 
             _service.Settings.FfmpegPath = FfmpegPath;
             _service.Settings.FfprobePath = FfprobePath;
 
             _service.Settings.AutoDownloadFfmpeg = AutoDownloadFfmpeg;
+            _service.Settings.FFmpegReleaseURL = FfmpegReleaseURL;
 
             _service.Save();
             Saved?.Invoke();

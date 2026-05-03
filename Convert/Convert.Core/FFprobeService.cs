@@ -50,34 +50,54 @@
 
             var result = new FileAnalysisResult { FilePath = filePath };
 
-            foreach (var stream in doc.RootElement.GetProperty("streams").EnumerateArray())
+            if (doc.RootElement.TryGetProperty("streams", out var streamsProp))
             {
-                string codec = stream.GetProperty("codec_name").GetString();
-                int index = stream.GetProperty("index").GetInt32();
-                string type = stream.GetProperty("codec_type").GetString();
-
-                if (type == "audio")
-                    result.AudioStreams.Add(new AudioStreamInfo { Index = index, Codec = codec });
-
-                if (type == "subtitle")
-                    result.SubtitleStreams.Add(new SubtitleStreamInfo { Index = index, Codec = codec });
-            }
-
-            if (doc.RootElement.TryGetProperty("format", out var format))
-            {
-                if (format.TryGetProperty("duration", out var durProp))
+                foreach (var stream in doc.RootElement.GetProperty("streams").EnumerateArray())
                 {
-                    var durStr = durProp.GetString();
+                    string codec = stream.TryGetProperty("codec_name", out var codecProp) ? codecProp.GetString() ?? "unknown" : "unknown";
+                    int index = stream.TryGetProperty("index", out var indexProp) ? indexProp.GetInt32() : -1;
+                    string type = stream.TryGetProperty("codec_type", out var typeProp) ? typeProp.GetString() ?? "unknown" : "unknown";
 
-                    if (double.TryParse(durStr, NumberStyles.Any, CultureInfo.InvariantCulture, out double dur))
+                    if (type == "audio")
+                        result.AudioStreams.Add(new AudioStreamInfo
+                        {
+                            Index = stream.GetProperty("index").GetInt32(),
+                            Codec = codec,
+                            Channels = stream.TryGetProperty("channels", out var ch) ? ch.GetInt32() : 0,
+                            Bitrate = stream.TryGetProperty("bit_rate", out var br) && int.TryParse(br.GetString(), out var bitrate) ? bitrate : 0
+                        });
+
+                    if (type == "subtitle")
+                        result.SubtitleStreams.Add(new SubtitleStreamInfo { Index = index, Codec = codec });
+
+                    if (type == "video")
                     {
-                        result.DurationSeconds = dur;
+                        result.VideoStream = new VideoStreamInfo
+                        {
+                            Index = stream.GetProperty("index").GetInt32(),
+                            Codec = codec,
+                            Resolution = $"{stream.GetProperty("width").GetInt32()}x{stream.GetProperty("height").GetInt32()}",
+                            PixelFormat = stream.TryGetProperty("pix_fmt", out var pf) ? pf.GetString() ?? "" : ""
+                        };
                     }
+                }
+
+                if (doc.RootElement.TryGetProperty("format", out var format))
+                {
+                    if (format.TryGetProperty("duration", out var durProp))
+                    {
+                        var durStr = durProp.GetString();
+
+                        if (double.TryParse(durStr, NumberStyles.Any, CultureInfo.InvariantCulture, out double dur))
+                        {
+                            result.DurationSeconds = dur;
+                        }
+                    }
+
                 }
             }
 
             return result;
         }
     }
-
 }

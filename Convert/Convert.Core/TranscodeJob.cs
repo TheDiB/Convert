@@ -9,6 +9,7 @@ namespace Convert.Core
         public string InputPath { get; }
         public string OutputPath { get; private set; }
         public double Progress { get; private set; }
+        public FileAnalysisResult? Analysis { get; private set; }
 
         public enum JobMode
         {
@@ -51,20 +52,20 @@ namespace Convert.Core
                 Cts = new CancellationTokenSource();
 
                 Status = "Analyzing";
-                var analysis = await probe.AnalyzeAsync(InputPath);
+                Analysis = await probe.AnalyzeAsync(InputPath);
 
                 if (Mode == JobMode.AnalyzeOnly)
                 {
-                    DumpAnalysisToLog(analysis, log);
+                    DumpAnalysisToLog(Analysis, log);
                     Status = "Analyzed";
                     return;
                 }
 
                 Status = "Building command";
-                string args = await engine.BuildCommandAsync(analysis, options);
+                string args = await engine.BuildCommandAsync(Analysis, options);
 
                 Status = "Transcoding";
-                int code = await engine.ExecuteAsync(args, log, line => ParseProgress(line, analysis.DurationSeconds), Cts.Token);
+                int code = await engine.ExecuteAsync(args, log, line => ParseProgress(line, Analysis.DurationSeconds), Cts.Token);
 
                 Status = code == 0 ? "Done" : "Failed";
             }
@@ -115,7 +116,6 @@ namespace Convert.Core
 
             log("==============================");
         }
-
 
         public void Stop()
         {

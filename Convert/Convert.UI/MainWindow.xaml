@@ -84,6 +84,7 @@
         <!-- Liste des jobs -->
         <GroupBox Grid.Row="2" Header="File d'attente" Margin="0 0 0 0">
             <DataGrid 
+                  x:Name="JobList"
                   ItemsSource="{Binding Jobs}"
                   SelectedItem="{Binding SelectedJob}"
                   AutoGenerateColumns="False">
@@ -145,5 +146,12 @@
                  TextWrapping="Wrap"
                  VerticalScrollBarVisibility="Auto"/>
         </GroupBox>
+
+        <material:Snackbar
+            x:Name="MainSnackbar"
+            MessageQueue="{Binding SnackbarMessageQueue}"
+            Margin="16"
+            VerticalAlignment="Bottom"
+            HorizontalAlignment="Center" />
     </Grid>
 </Window>

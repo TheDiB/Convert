@@ -8,17 +8,36 @@ namespace Convert.UI
     public partial class MainWindow : Window
     {
         private readonly SettingsService _settingsService;
+        private readonly DialogService _dialogs;
+        private readonly FFmpegService _FFmpeg;
         public MainViewModel ViewModel { get; }
 
         public MainWindow()
         {
             InitializeComponent();
             _settingsService = new SettingsService();
-            DataContext = new MainViewModel(_settingsService);
+            _dialogs = new DialogService();
+            _FFmpeg = new FFmpegService();
+            DataContext = new MainViewModel(_settingsService, _dialogs, _FFmpeg);
 
             LogTextBox.TextChanged += (s, e) =>
             {
                 LogTextBox.ScrollToEnd();
+            };
+
+            Loaded += (s, e) =>
+            {
+                if (DataContext is MainViewModel vm)
+                {
+                    vm.FFmpeg.DownloadCompleted += () =>
+                    {
+                        // Toujours sur le thread UI
+                        Dispatcher.Invoke(() =>
+                        {
+                            vm.Notify("FFmpeg a été mis à jour avec succès !");
+                        });
+                    };
+                }
             };
         }
 

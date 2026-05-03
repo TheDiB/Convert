@@ -2,6 +2,7 @@
 using Convert.Models;
 using Convert.UI.Services;
 using Convert.UI.ViewModels;
+using MaterialDesignThemes.Wpf;
 using Microsoft.Win32;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -18,9 +19,13 @@ public class MainViewModel : INotifyPropertyChanged
     public ObservableCollection<JobViewModel> Jobs { get; } = new();
     private readonly SemaphoreSlim _parallelLimiter = new SemaphoreSlim(4);
     public OptionsViewModel OptionsVM { get; }
-
+    public IDialogService Dialogs { get; }
     private JobViewModel _selectedJob;
     private SettingsService _settings;
+    public FFmpegService FFmpeg { get; set; }
+
+    public ISnackbarMessageQueue SnackbarMessageQueue { get; }
+        = new SnackbarMessageQueue();
 
     public string AppVersion { get; private set; }
 
@@ -31,8 +36,55 @@ public class MainViewModel : INotifyPropertyChanged
     public bool ConvertMovTextToSrt { get; private set; }
     public string PreferredVideoEngine { get; private set; }
 
-    public bool CanTranscode => Jobs.Any();
-    public bool CanAnalyze => Jobs.Any();
+    private bool _isFFmpegChecking;
+    public bool IsFFmpegChecking
+    {
+        get => _isFFmpegChecking;
+        set
+        {
+            if (_isFFmpegChecking != value)
+            {
+                _isFFmpegChecking = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(IsFFmpegBusy));
+                OnPropertyChanged(nameof(CanTranscode));
+                OnPropertyChanged(nameof(CanAnalyze));
+            }
+        }
+    }
+
+    private bool _isFFmpegDownloading;
+    public bool IsFFmpegDownloading
+    {
+        get => _isFFmpegDownloading;
+        set
+        {
+            if (_isFFmpegDownloading != value)
+            {
+                _isFFmpegDownloading = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(IsFFmpegBusy));
+                OnPropertyChanged(nameof(CanTranscode));
+                OnPropertyChanged(nameof(CanAnalyze));
+            }
+        }
+    }
+
+    public bool IsFFmpegBusy => IsFFmpegChecking || IsFFmpegDownloading;
+    public string FFmpegStatusMessage { get; set; } = "Initialisation FFmpeg...";
+    public string FFmpegNotificationMessage
+    {
+        get => _ffmpegNotificationMessage;
+        set
+        {
+            _ffmpegNotificationMessage = value;
+            OnPropertyChanged();
+        }
+    }
+    private string _ffmpegNotificationMessage = "";
+
+    public bool CanTranscode => Jobs.Any() && !IsFFmpegBusy;
+    public bool CanAnalyze => Jobs.Any() && !IsFFmpegBusy;
 
     public JobViewModel SelectedJob
     {
@@ -55,9 +107,11 @@ public class MainViewModel : INotifyPropertyChanged
     public ICommand TranscodeAllCommand { get; }
     public ICommand ClearCommand { get; }
 
-    public MainViewModel(SettingsService settings)
+    public MainViewModel(SettingsService settings, IDialogService dialogs, FFmpegService ffmpeg)
     {
         _settings = settings;
+        Dialogs = dialogs;
+        FFmpeg = ffmpeg;
 
         var version = FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location);
         AppVersion = string.Concat("Convert v", version.FileMajorPart, '.', version.FileMinorPart);
@@ -99,8 +153,6 @@ public class MainViewModel : INotifyPropertyChanged
         ConvertDtsToEac3 = _settings.Settings.ConvertDtsToEac3;
         ConvertMovTextToSrt = _settings.Settings.ConvertMovTextToSrt;
 
-        //MaxParallelJobs = _settings.Settings.MaxParallelJobs;
-
         PreferredVideoEngine = _settings.Settings.PreferredVideoEngine;
     }
 
@@ -141,12 +193,19 @@ public class MainViewModel : INotifyPropertyChanged
         }
     }
 
+    public void Notify(string message)
+    {
+        SnackbarMessageQueue.Enqueue(message);
+    }
+
     public event PropertyChangedEventHandler PropertyChanged;
     private void OnPropertyChanged([CallerMemberName] string name = null)
         => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 
     private async Task AnalyzeAllAsync()
     {
+        var entries = new List<AnalysisReportModel>();
+
         foreach (var job in Jobs)
         {
             job.Job.Mode = JobMode.AnalyzeOnly;
@@ -156,8 +215,15 @@ public class MainViewModel : INotifyPropertyChanged
                     Options,
                     log => job.AppendLog(log));
 
+            if (job.Job.Status != "Error")
+                entries.Add(job.Job.Analysis.ToReportEntry());
+            else
+                entries.Add(new AnalysisReportModel { FilePath = job.Job.InputPath, FileName = Path.GetFileName(job.Job.InputPath), VideoCodec = "unknown", AudioCodecs = "unknown", FileSizeBytes = new FileInfo(job.Job.InputPath).Length });
+
             job.RefreshStatus();
         }
+
+        FFmpeg.ExportReport(entries, "Convert_Global_Analysis");
     }
 
     private async Task TranscodeAllAsync()
@@ -217,6 +283,14 @@ public class MainViewModel : INotifyPropertyChanged
     {
         jobVM.Job.Mode = JobMode.AnalyzeOnly;
         await jobVM.Job.RunAsync(_probe, _engine, Options, log => jobVM.AppendLog(log));
+
+        AnalysisReportModel reportEntry;
+        if (jobVM.Job.Status != "Error")
+            reportEntry = jobVM.Job.Analysis.ToReportEntry();
+        else
+            reportEntry = new AnalysisReportModel { FilePath = jobVM.Job.InputPath, FileName = Path.GetFileName(jobVM.Job.InputPath), VideoCodec = "unknown", AudioCodecs = "unknown", FileSizeBytes = new FileInfo(jobVM.Job.InputPath).Length };
+
+        FFmpeg.ExportReport(new[] { reportEntry }, "Convert_Single_Analysis");
     }
 
     private async Task TranscodeOneAsync(JobViewModel jobVM)
