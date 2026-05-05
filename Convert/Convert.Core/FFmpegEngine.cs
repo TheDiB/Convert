@@ -1,9 +1,9 @@
-﻿namespace Convert.Core
-{
-    using Convert.Models;
-    using System.Diagnostics;
-    using System.Text;
+﻿using Convert.Models;
+using System.Diagnostics;
+using System.Text;
 
+namespace Convert.Core
+{
     public class FFmpegEngine
     {
         private readonly string _ffmpegPath;
@@ -84,7 +84,7 @@
             return sb.ToString();
         }
 
-        public async Task<int> ExecuteAsync(string arguments, Action<string> log, Action<string> onProgressLine, CancellationToken token)
+        public async Task<int> ExecuteAsync(string arguments, Action<string> log, Action<string> onProgressLine, CancellationToken token, Action<Process>? onProcessCreated = null)
         {
             var process = new Process
             {
@@ -127,6 +127,7 @@
                 }
             };
 
+            onProcessCreated?.Invoke(process);   // ← LE POINT CLÉ
             process.Start();
             process.BeginOutputReadLine();
             process.BeginErrorReadLine();

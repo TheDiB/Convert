@@ -62,3 +62,4 @@ nunit-*.xml
 /Convert/Convert.UI/ffmpeg/ffmpeg.exe
 /Convert/Convert.UI/ffmpeg/ffprobe.exe
 /Convert/Convert.UI/Convert.UI.csproj.user
+/Convert/.vs/Convert/CopilotIndices/18.5.39187.10602

@@ -1,6 +1,6 @@
 ﻿namespace Convert.Models
 {
-    public enum TranscodeJobStatus
+    public enum JobStatus
     {
         Pending,
         Analyzing,
@@ -8,6 +8,7 @@
         Transcoding,
         Done,
         Failed,
-        Error
+        Error,
+        Stopped
     }
 }

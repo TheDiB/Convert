@@ -16,8 +16,18 @@ using static Convert.Core.TranscodeJob;
 
 public class MainViewModel : INotifyPropertyChanged
 {
+    private CancellationTokenSource _globalCts = new();
+    public bool IsStoppingAll { get; private set; }
+
+    private bool _stopAllRequested = false;
+    public bool StopAllRequested
+    {
+        get => _stopAllRequested;
+        set { _stopAllRequested = value; OnPropertyChanged(); }
+    }
+
     public ObservableCollection<JobViewModel> Jobs { get; } = new();
-    private readonly SemaphoreSlim _parallelLimiter = new SemaphoreSlim(4);
+    private SemaphoreSlim _parallelLimiter;
     public OptionsViewModel OptionsVM { get; }
     public IDialogService Dialogs { get; }
     private JobViewModel _selectedJob;
@@ -46,9 +56,7 @@ public class MainViewModel : INotifyPropertyChanged
             {
                 _isFFmpegChecking = value;
                 OnPropertyChanged();
-                OnPropertyChanged(nameof(IsFFmpegBusy));
-                OnPropertyChanged(nameof(CanTranscode));
-                OnPropertyChanged(nameof(CanAnalyze));
+                RefreshInputs();
             }
         }
     }
@@ -63,9 +71,7 @@ public class MainViewModel : INotifyPropertyChanged
             {
                 _isFFmpegDownloading = value;
                 OnPropertyChanged();
-                OnPropertyChanged(nameof(IsFFmpegBusy));
-                OnPropertyChanged(nameof(CanTranscode));
-                OnPropertyChanged(nameof(CanAnalyze));
+                RefreshInputs();
             }
         }
     }
@@ -85,6 +91,27 @@ public class MainViewModel : INotifyPropertyChanged
 
     public bool CanTranscode => Jobs.Any() && !IsFFmpegBusy;
     public bool CanAnalyze => Jobs.Any() && !IsFFmpegBusy;
+    public bool CanStopAll
+    {
+        get
+        {
+            return true;
+            if (!Jobs.Any())
+                return false;
+            else
+            {
+                if (Jobs.Any(j => j.Status == "Transcoding" || j.Status == "Analyzing"))
+                    return true;
+                else
+                {
+                    if (Jobs.All(j => j.Status == "Stopped" || j.Status == "Pending" || j.Status == "Done" || j.Status == "Faled" || j.Status == "Error" || j.Status == "Failed"))
+                        return false;
+                    else
+                        return true;
+                }
+            }
+        }
+    }
 
     public JobViewModel SelectedJob
     {
@@ -106,6 +133,7 @@ public class MainViewModel : INotifyPropertyChanged
     public ICommand AnalyzeAllCommand { get; }
     public ICommand TranscodeAllCommand { get; }
     public ICommand ClearCommand { get; }
+    public ICommand StopAllCommand { get; }
 
     public MainViewModel(SettingsService settings, IDialogService dialogs, FFmpegService ffmpeg)
     {
@@ -122,6 +150,7 @@ public class MainViewModel : INotifyPropertyChanged
         SelectedAudioCodec = _settings.Settings.DefaultAudioCodec;
         ConvertDtsToEac3 = _settings.Settings.ConvertDtsToEac3;
         ConvertMovTextToSrt = _settings.Settings.ConvertMovTextToSrt;
+        _parallelLimiter = new SemaphoreSlim(_settings.Settings.MaxParallelJobs);
 
         OptionsVM = new OptionsViewModel(Options);
         Jobs = new ObservableCollection<JobViewModel>();
@@ -135,11 +164,11 @@ public class MainViewModel : INotifyPropertyChanged
         AnalyzeAllCommand = new RelayCommand(async _ => await AnalyzeAllAsync());
         TranscodeAllCommand = new RelayCommand(async _ => await TranscodeAllAsync());
         ClearCommand = new RelayCommand(_ => ClearAll());
+        StopAllCommand = new RelayCommand(async _ => StopAll(), () => !IsStoppingAll);
 
         Jobs.CollectionChanged += (_, __) =>
         {
-            OnPropertyChanged(nameof(CanTranscode));
-            OnPropertyChanged(nameof(CanAnalyze));
+            RefreshInputs();
         };
     }
 
@@ -166,6 +195,7 @@ public class MainViewModel : INotifyPropertyChanged
         if (dialog.ShowDialog() == true)
         {
             AddJobFromFile(dialog.FileName);
+            Notify($"Fichier ajouté avec succès");
         }
     }
 
@@ -190,6 +220,9 @@ public class MainViewModel : INotifyPropertyChanged
             {
                 AddJobFromFile(file);
             }
+
+            if (files.Count() > 0)
+                Notify($"{files.Count()} fichier(s) ajouté(s) avec succès");
         }
     }
 
@@ -213,8 +246,7 @@ public class MainViewModel : INotifyPropertyChanged
                     _probe,
                     _engine,
                     Options,
-                    log => job.AppendLog(log));
-
+                    log => job.AppendLog(log), _globalCts.Token, () => StopAllRequested);
             if (job.Job.Status != "Error")
                 entries.Add(job.Job.Analysis.ToReportEntry());
             else
@@ -240,11 +272,34 @@ public class MainViewModel : INotifyPropertyChanged
 
     private async Task RunJobWithLimit(JobViewModel jobVM, JobMode mode)
     {
+        // Si STOP ALL est actif → on annule immédiatement ce job
+        if (StopAllRequested)
+        {
+            jobVM.Job.Status = "Canceled";
+            return;
+        }
+
         await _parallelLimiter.WaitAsync();
+
         try
         {
+            // Double sécurité : STOP ALL peut avoir été activé entre temps
+            if (StopAllRequested)
+            {
+                jobVM.Job.Status = "Canceled";
+                return;
+            }
+
             jobVM.Job.Mode = mode;
-            await jobVM.Job.RunAsync(_probe, _engine, Options, log => jobVM.AppendLog(log));
+
+            await jobVM.Job.RunAsync(
+                _probe,
+                _engine,
+                Options,
+                log => jobVM.AppendLog(log),
+                _globalCts.Token,
+                () => StopAllRequested
+            );
         }
         finally
         {
@@ -252,11 +307,13 @@ public class MainViewModel : INotifyPropertyChanged
         }
     }
 
+
     private void AddJobFromFile(string filePath)
     {
         if (Jobs.Any(j => j.FileName == Path.GetFileName(filePath)))
             return;
 
+        StopAllRequested = false;
         var job = new TranscodeJob(filePath);
         job.SetPending();
         var vm = new JobViewModel(job, RemoveJob, AnalyzeOneAsync, TranscodeOneAsync);
@@ -277,12 +334,52 @@ public class MainViewModel : INotifyPropertyChanged
             job.Job.Stop();   // stoppe FFmpeg si en cours
             Jobs.Remove(job); // supprime de la liste
         }
+
+        Notify($"Liste d'attente effacée");
+    }
+
+    private void StopAll()
+    {
+        if (StopAllRequested)
+            return; // ← clics suivants ignorés
+
+        StopAllRequested = true;
+        IsStoppingAll = true;
+        _globalCts.Cancel();
+
+        foreach (var job in Jobs)
+        {
+            switch (job.Status)
+            {
+                case "Pending":
+                case "Analyzing":
+                case "Transcoding":
+                    job.Job.Cts.Cancel();
+                    job.Job.Cts.Dispose();
+                    job.Job.Cts = new CancellationTokenSource(); // ← IMPORTANT
+                    job.Job.Status = "Canceled";
+                    break;
+
+                case "Done":
+                case "Failed":
+                case "Canceled":
+                    // on ne touche pas
+                    break;
+            }
+        }
+
+        Notify("Toutes les tâches ont été stoppées");
+        IsStoppingAll = false;
+
+        // On recrée un token pour la prochaine session
+        _globalCts = new CancellationTokenSource();
     }
 
     private async Task AnalyzeOneAsync(JobViewModel jobVM)
     {
         jobVM.Job.Mode = JobMode.AnalyzeOnly;
-        await jobVM.Job.RunAsync(_probe, _engine, Options, log => jobVM.AppendLog(log));
+        await jobVM.Job.RunAsync(_probe, _engine, Options, log => jobVM.AppendLog(log), _globalCts.Token, () => StopAllRequested);
+        RefreshInputs();
 
         AnalysisReportModel reportEntry;
         if (jobVM.Job.Status != "Error")
@@ -296,6 +393,15 @@ public class MainViewModel : INotifyPropertyChanged
     private async Task TranscodeOneAsync(JobViewModel jobVM)
     {
         jobVM.Job.Mode = JobMode.Transcode;
-        await jobVM.Job.RunAsync(_probe, _engine, Options, log => jobVM.AppendLog(log));
+        await jobVM.Job.RunAsync(_probe, _engine, Options, log => jobVM.AppendLog(log), _globalCts.Token, () => StopAllRequested);
+        RefreshInputs();
+    }
+
+    private void RefreshInputs()
+    {
+        OnPropertyChanged(nameof(IsFFmpegBusy));
+        OnPropertyChanged(nameof(CanTranscode));
+        OnPropertyChanged(nameof(CanAnalyze));
+        OnPropertyChanged(nameof(CanStopAll));
     }
 }

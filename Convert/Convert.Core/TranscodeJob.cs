@@ -1,4 +1,5 @@
 ﻿using Convert.Models;
+using System.Diagnostics;
 using System.Globalization;
 using System.Text.RegularExpressions;
 
@@ -9,6 +10,8 @@ namespace Convert.Core
         public string InputPath { get; }
         public string OutputPath { get; private set; }
         public double Progress { get; private set; }
+        public Process? FFprobeProcess { get; private set; }
+        public Process? FFmpegProcess { get; private set; }
         public FileAnalysisResult? Analysis { get; private set; }
 
         public enum JobMode
@@ -16,12 +19,9 @@ namespace Convert.Core
             AnalyzeOnly,
             Transcode
         }
-
         public JobMode Mode { get; set; }
-
-
         public event Action ProgressChanged;
-        public CancellationTokenSource Cts { get; private set; }
+        public CancellationTokenSource Cts { get; set; } = new CancellationTokenSource();
 
         public TranscodeJob(string inputPath)
         {
@@ -34,7 +34,7 @@ namespace Convert.Core
         public string Status
         {
             get => _status;
-            private set
+            set
             {
                 _status = value;
                 StatusChanged?.Invoke();
@@ -45,14 +45,17 @@ namespace Convert.Core
             FFprobeService probe,
             FFmpegEngine engine,
             TranscodeOptions options,
-            Action<string> log)
+            Action<string> log,
+            CancellationToken globalToken,
+            Func<bool> isStopAllRequested)
         {
+            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(globalToken, this.Cts.Token);
+            var token = linkedCts.Token;
+
             try
             {
-                Cts = new CancellationTokenSource();
-
                 Status = "Analyzing";
-                Analysis = await probe.AnalyzeAsync(InputPath);
+                Analysis = await probe.AnalyzeAsync(InputPath, token, p => FFprobeProcess = p);
 
                 if (Mode == JobMode.AnalyzeOnly)
                 {
@@ -65,13 +68,17 @@ namespace Convert.Core
                 string args = await engine.BuildCommandAsync(Analysis, options);
 
                 Status = "Transcoding";
-                int code = await engine.ExecuteAsync(args, log, line => ParseProgress(line, Analysis.DurationSeconds), Cts.Token);
+                int code = await engine.ExecuteAsync(args, log, line => ParseProgress(line, Analysis.DurationSeconds), token, p => FFmpegProcess = p);
 
-                Status = code == 0 ? "Done" : "Failed";
+                Status = code == 0 ? "Done" : (isStopAllRequested() ? "Canceled" : "Failed");
+            }
+            catch (OperationCanceledException)
+            {
+                Status = isStopAllRequested() ? "Canceled" : "Failed";
             }
             catch (Exception ex)
             {
-                Status = "Error";
+                Status = isStopAllRequested() ? "Canceled" : "Error";
                 log($"ERROR: {ex.Message}");
             }
         }
@@ -130,5 +137,20 @@ namespace Convert.Core
         {
             Status = "Pending";
         }
+
+        public void Cancel()
+        {
+            try
+            {
+                Cts?.Cancel();
+
+                FFprobeProcess?.Kill(true);
+                FFmpegProcess?.Kill(true);
+            }
+            catch { }
+
+            Status = "Canceled";
+        }
+
     }
 }

@@ -1,10 +1,10 @@
-﻿namespace Convert.Core
-{
-    using Convert.Models;
-    using System.Diagnostics;
-    using System.Globalization;
-    using System.Text.Json;
+﻿using Convert.Models;
+using System.Diagnostics;
+using System.Globalization;
+using System.Text.Json;
 
+namespace Convert.Core
+{
     public class FFprobeService
     {
         private readonly string _ffprobePath;
@@ -15,7 +15,7 @@
             _ffprobePath = ffprobePath;
         }
 
-        public async Task<FileAnalysisResult> AnalyzeAsync(string filePath)
+        public async Task<FileAnalysisResult> AnalyzeAsync(string filePath, CancellationToken token, Action<Process>? onProcessCreated = null)
         {
             var args = $"-v error -show_streams -show_format -of json \"{filePath}\"";
 
@@ -31,13 +31,24 @@
                     CreateNoWindow = true
                 }
             };
-
+            onProcessCreated?.Invoke(process);   // ← LE POINT CLÉ
             process.Start();
 
-            string output = await process.StandardOutput.ReadToEndAsync();
-            await process.WaitForExitAsync();
+            // Si annulation → tuer ffprobe immédiatement
+            token.Register(() =>
+            {
+                try { if (!process.HasExited) process.Kill(true); }
+                catch { }
+            });
 
-            // Extraction JSON robuste (comme ton script)
+            string output = await process.StandardOutput.ReadToEndAsync();
+
+            // Attendre la fin du process AVEC annulation
+            await process.WaitForExitAsync(token);
+
+            token.ThrowIfCancellationRequested();
+
+            // Extraction JSON robuste
             int start = output.IndexOf("{");
             int end = output.LastIndexOf("}");
 
@@ -52,7 +63,7 @@
 
             if (doc.RootElement.TryGetProperty("streams", out var streamsProp))
             {
-                foreach (var stream in doc.RootElement.GetProperty("streams").EnumerateArray())
+                foreach (var stream in streamsProp.EnumerateArray())
                 {
                     string codec = stream.TryGetProperty("codec_name", out var codecProp) ? codecProp.GetString() ?? "unknown" : "unknown";
                     int index = stream.TryGetProperty("index", out var indexProp) ? indexProp.GetInt32() : -1;
@@ -61,7 +72,7 @@
                     if (type == "audio")
                         result.AudioStreams.Add(new AudioStreamInfo
                         {
-                            Index = stream.GetProperty("index").GetInt32(),
+                            Index = index,
                             Codec = codec,
                             Channels = stream.TryGetProperty("channels", out var ch) ? ch.GetInt32() : 0,
                             Bitrate = stream.TryGetProperty("bit_rate", out var br) && int.TryParse(br.GetString(), out var bitrate) ? bitrate : 0
@@ -74,30 +85,30 @@
                     {
                         result.VideoStream = new VideoStreamInfo
                         {
-                            Index = stream.GetProperty("index").GetInt32(),
+                            Index = index,
                             Codec = codec,
                             Resolution = $"{stream.GetProperty("width").GetInt32()}x{stream.GetProperty("height").GetInt32()}",
                             PixelFormat = stream.TryGetProperty("pix_fmt", out var pf) ? pf.GetString() ?? "" : ""
                         };
                     }
                 }
+            }
 
-                if (doc.RootElement.TryGetProperty("format", out var format))
+            if (doc.RootElement.TryGetProperty("format", out var format))
+            {
+                if (format.TryGetProperty("duration", out var durProp))
                 {
-                    if (format.TryGetProperty("duration", out var durProp))
+                    var durStr = durProp.GetString();
+
+                    if (double.TryParse(durStr, NumberStyles.Any, CultureInfo.InvariantCulture, out double dur))
                     {
-                        var durStr = durProp.GetString();
-
-                        if (double.TryParse(durStr, NumberStyles.Any, CultureInfo.InvariantCulture, out double dur))
-                        {
-                            result.DurationSeconds = dur;
-                        }
+                        result.DurationSeconds = dur;
                     }
-
                 }
             }
 
             return result;
         }
+
     }
 }

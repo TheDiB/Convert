@@ -19,26 +19,6 @@ namespace Convert.UI
             _dialogs = new DialogService();
             _FFmpeg = new FFmpegService();
             DataContext = new MainViewModel(_settingsService, _dialogs, _FFmpeg);
-
-            LogTextBox.TextChanged += (s, e) =>
-            {
-                LogTextBox.ScrollToEnd();
-            };
-
-            Loaded += (s, e) =>
-            {
-                if (DataContext is MainViewModel vm)
-                {
-                    vm.FFmpeg.DownloadCompleted += () =>
-                    {
-                        // Toujours sur le thread UI
-                        Dispatcher.Invoke(() =>
-                        {
-                            vm.Notify("FFmpeg a été mis à jour avec succès !");
-                        });
-                    };
-                }
-            };
         }
 
         private void OpenSettings_Click(object sender, RoutedEventArgs e)
@@ -67,6 +47,26 @@ namespace Convert.UI
         private void Quit_Click(object sender, RoutedEventArgs e)
         {
             this.Close();
+        }
+
+        private void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is MainViewModel vm)
+            {
+                vm.FFmpeg.DownloadCompleted += () =>
+                {
+                    // Toujours sur le thread UI
+                    Dispatcher.Invoke(() =>
+                    {
+                        vm.Notify("FFmpeg a été mis à jour avec succès !");
+                    });
+                };
+            }
+        }
+
+        private void LogTextBox_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
+        {
+            LogTextBox.ScrollToEnd();
         }
     }
 }

@@ -10,7 +10,14 @@
     <FileVersion>0.1.0.0</FileVersion>
     <BaseOutputPath>..\..\bin</BaseOutputPath>
     <StartupObject>Convert.UI.App</StartupObject>
+    <ApplicationIcon>Assets\convert.ico</ApplicationIcon>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="Assets\convert.ico">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Convert.Core\Convert.Core.csproj" />
