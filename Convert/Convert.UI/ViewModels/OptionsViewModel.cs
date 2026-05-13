@@ -1,9 +1,8 @@
 ﻿using Convert.Models;
-using System.ComponentModel;
 
 namespace Convert.UI.ViewModels
 {
-    public class OptionsViewModel : INotifyPropertyChanged
+    public class OptionsViewModel : ViewModelBase
     {
         public TranscodeOptions Options { get; }
 
@@ -16,20 +15,9 @@ namespace Convert.UI.ViewModels
 
         public IEnumerable<string> VideoCodecs => new[]
         {
-        "copy",
-        "h264",
-        "hevc",
-        "hevc_nvenc",
-        "h264_nvenc"
-    };
-
-        public IEnumerable<string> AudioCodecs => new[]
-        {
-        "copy",
-        "eac3",
-        "aac"
-    };
-
-        public event PropertyChangedEventHandler PropertyChanged;
+            "copy",
+            "h264",
+            "hevc"
+        };
     }
 }

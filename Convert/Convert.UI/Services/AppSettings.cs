@@ -11,9 +11,6 @@
         public string DefaultVideoCodec { get; set; } = "copy";
         public string DefaultAudioCodec { get; set; } = "copy";
 
-        public bool ConvertDtsToEac3 { get; set; } = false;
-        public bool ConvertMovTextToSrt { get; set; } = true;
-
         public int MaxParallelJobs { get; set; } = 2;
 
         public string PreferredVideoEngine { get; set; } = "CPU";

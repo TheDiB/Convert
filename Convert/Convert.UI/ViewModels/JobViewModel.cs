@@ -1,13 +1,11 @@
 ﻿using Convert.Core;
 using Convert.UI.Services;
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
 using System.Text;
 using System.Windows.Input;
 
 namespace Convert.UI.ViewModels
 {
-    public class JobViewModel : INotifyPropertyChanged
+    public class JobViewModel : ViewModelBase
     {
         public TranscodeJob Job => _job;
         private readonly TranscodeJob _job;
@@ -17,6 +15,7 @@ namespace Convert.UI.ViewModels
         public string Status => _job.Status;
         public double Progress => _job.Progress;
         public string Log => _log.ToString();
+
         public ICommand StopCommand { get; }
         public ICommand DeleteCommand { get; }
         public ICommand AnalyzeCommand { get; }
@@ -44,7 +43,6 @@ namespace Convert.UI.ViewModels
 
         public void AppendLog(string line)
         {
-
             if (line == null) return;
 
             _log.AppendLine(line);
@@ -55,10 +53,5 @@ namespace Convert.UI.ViewModels
         {
             OnPropertyChanged(nameof(Status));
         }
-
-        public event PropertyChangedEventHandler PropertyChanged;
-        private void OnPropertyChanged([CallerMemberName] string name = null)
-            => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
     }
-
 }

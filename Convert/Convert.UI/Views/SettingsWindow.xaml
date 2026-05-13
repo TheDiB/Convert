@@ -71,12 +71,6 @@
 
                     <TextBlock Text="Formats pris en charge" FontWeight="Bold"/>
                     <TextBox Text="{Binding SupportedFileTypes}"/>
-
-                    <CheckBox Content="Forcer la conversion DTS → EAC3" ToolTip="Forcer la conversion des pistes DTS vers EAC3 même si un codec différent est sélectionné"
-                              IsChecked="{Binding ConvertDtsToEac3}"/>
-
-                    <!--<CheckBox Content="Convertir mov_text → SRT"
-                              IsChecked="{Binding ConvertMovTextToSrt}"/>-->
                 </StackPanel>
             </TabItem>
 

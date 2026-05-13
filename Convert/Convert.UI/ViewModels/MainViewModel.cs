@@ -5,16 +5,14 @@ using Convert.UI.ViewModels;
 using MaterialDesignThemes.Wpf;
 using Microsoft.Win32;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Windows.Input;
 
 using static Convert.Core.TranscodeJob;
 
-public class MainViewModel : INotifyPropertyChanged
+public class MainViewModel : ViewModelBase
 {
     private CancellationTokenSource _globalCts = new();
     public bool IsStoppingAll { get; private set; }
@@ -42,8 +40,6 @@ public class MainViewModel : INotifyPropertyChanged
     public string SelectedContainer { get; private set; }
     public string SelectedVideoCodec { get; private set; }
     public string SelectedAudioCodec { get; private set; }
-    public bool ConvertDtsToEac3 { get; private set; }
-    public bool ConvertMovTextToSrt { get; private set; }
     public string PreferredVideoEngine { get; private set; }
 
     private bool _isFFmpegChecking;
@@ -89,6 +85,7 @@ public class MainViewModel : INotifyPropertyChanged
     }
     private string _ffmpegNotificationMessage = "";
 
+
     public bool CanTranscode => Jobs.Any() && !IsFFmpegBusy;
     public bool CanAnalyze => Jobs.Any() && !IsFFmpegBusy;
     public bool CanStopAll
@@ -116,7 +113,7 @@ public class MainViewModel : INotifyPropertyChanged
     public JobViewModel SelectedJob
     {
         get => _selectedJob;
-        set { _selectedJob = value; OnPropertyChanged(); }
+        set { _selectedJob = value; OnPropertyChanged(); LoadAudioTracksFromSelectedJob(); }
     }
 
     public TranscodeOptions Options { get; } = new();
@@ -124,6 +121,19 @@ public class MainViewModel : INotifyPropertyChanged
     {
         get => _parallelLimiter.CurrentCount;
     }
+
+    public ObservableCollection<AudioProfileItem> AudioProfiles { get; } =
+        new ObservableCollection<AudioProfileItem>
+        {
+        new AudioProfileItem(AudioProfile.Copy, "Copie (sans modification)"),
+        new AudioProfileItem(AudioProfile.Eac3_5_1, "Dolby Digital Plus EAC3 5.1 (640 kbps)"),
+        new AudioProfileItem(AudioProfile.Ac3_5_1, "Dolby Digital AC3 5.1 (640 kbps)"),
+        new AudioProfileItem(AudioProfile.Ac3_2_0, "Stéréo AC3 2.0 (192 kbps)"),
+        new AudioProfileItem(AudioProfile.Mp3_2_0, "Stéréo MP3 2.0 (320 kbps)")
+        };
+
+    public ObservableCollection<AudioTrackViewModel> AudioTracks { get; }
+    = new ObservableCollection<AudioTrackViewModel>();
 
     private readonly FFprobeService _probe;
     private readonly FFmpegEngine _engine;
@@ -148,8 +158,6 @@ public class MainViewModel : INotifyPropertyChanged
         SelectedContainer = _settings.Settings.DefaultContainer;
         SelectedVideoCodec = _settings.Settings.DefaultVideoCodec;
         SelectedAudioCodec = _settings.Settings.DefaultAudioCodec;
-        ConvertDtsToEac3 = _settings.Settings.ConvertDtsToEac3;
-        ConvertMovTextToSrt = _settings.Settings.ConvertMovTextToSrt;
         _parallelLimiter = new SemaphoreSlim(_settings.Settings.MaxParallelJobs);
 
         OptionsVM = new OptionsViewModel(Options);
@@ -178,10 +186,6 @@ public class MainViewModel : INotifyPropertyChanged
         SelectedContainer = _settings.Settings.DefaultContainer;
         SelectedVideoCodec = _settings.Settings.DefaultVideoCodec;
         SelectedAudioCodec = _settings.Settings.DefaultAudioCodec;
-
-        ConvertDtsToEac3 = _settings.Settings.ConvertDtsToEac3;
-        ConvertMovTextToSrt = _settings.Settings.ConvertMovTextToSrt;
-
         PreferredVideoEngine = _settings.Settings.PreferredVideoEngine;
     }
 
@@ -231,22 +235,22 @@ public class MainViewModel : INotifyPropertyChanged
         SnackbarMessageQueue.Enqueue(message);
     }
 
-    public event PropertyChangedEventHandler PropertyChanged;
-    private void OnPropertyChanged([CallerMemberName] string name = null)
-        => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
-
     private async Task AnalyzeAllAsync()
     {
         var entries = new List<AnalysisReportModel>();
 
         foreach (var job in Jobs)
         {
+            SelectedJob = job;
             job.Job.Mode = JobMode.AnalyzeOnly;
             await job.Job.RunAsync(
                     _probe,
                     _engine,
                     Options,
                     log => job.AppendLog(log), _globalCts.Token, () => StopAllRequested);
+
+            LoadAudioTracksFromSelectedJob();
+
             if (job.Job.Status != "Error")
                 entries.Add(job.Job.Analysis.ToReportEntry());
             else
@@ -293,6 +297,12 @@ public class MainViewModel : INotifyPropertyChanged
 
             jobVM.Job.Mode = mode;
 
+            Options.AudioTrackProfiles.Clear();
+            foreach (var track in AudioTracks)
+            {
+                Options.AudioTrackProfiles[track.Index] = track.SelectedProfile;
+            }
+
             await jobVM.Job.RunAsync(
                 _probe,
                 _engine,
@@ -319,6 +329,7 @@ public class MainViewModel : INotifyPropertyChanged
         job.SetPending();
         var vm = new JobViewModel(job, RemoveJob, AnalyzeOneAsync, TranscodeOneAsync);
         Jobs.Add(vm);
+        AudioTracks.Clear();
     }
 
     private void RemoveJob(JobViewModel jobVM)
@@ -326,6 +337,12 @@ public class MainViewModel : INotifyPropertyChanged
         // Si le job tourne encore, on le stoppe proprement
         jobVM.Job.Stop();
         Jobs.Remove(jobVM);
+
+        if (SelectedJob == jobVM)
+        {
+            SelectedJob = null;
+            AudioTracks.Clear();
+        }
     }
 
     private void ClearAll()
@@ -335,6 +352,9 @@ public class MainViewModel : INotifyPropertyChanged
             job.Job.Stop();   // stoppe FFmpeg si en cours
             Jobs.Remove(job); // supprime de la liste
         }
+
+        AudioTracks.Clear();
+        SelectedJob = null;
 
         Notify($"Liste d'attente effacée");
     }
@@ -379,7 +399,13 @@ public class MainViewModel : INotifyPropertyChanged
     private async Task AnalyzeOneAsync(JobViewModel jobVM)
     {
         jobVM.Job.Mode = JobMode.AnalyzeOnly;
+        Options.AudioTrackProfiles.Clear();
+        foreach (var track in AudioTracks)
+        {
+            Options.AudioTrackProfiles[track.Index] = track.SelectedProfile;
+        }
         await jobVM.Job.RunAsync(_probe, _engine, Options, log => jobVM.AppendLog(log), _globalCts.Token, () => StopAllRequested);
+        LoadAudioTracksFromSelectedJob();
         RefreshInputs();
 
         AnalysisReportModel reportEntry;
@@ -395,8 +421,34 @@ public class MainViewModel : INotifyPropertyChanged
     private async Task TranscodeOneAsync(JobViewModel jobVM)
     {
         jobVM.Job.Mode = JobMode.Transcode;
+
+        Options.AudioTrackProfiles.Clear();
+        foreach (var track in AudioTracks)
+        {
+            Options.AudioTrackProfiles[track.Index] = track.SelectedProfile;
+        }
+
         await jobVM.Job.RunAsync(_probe, _engine, Options, log => jobVM.AppendLog(log), _globalCts.Token, () => StopAllRequested);
         RefreshInputs();
+    }
+
+    private void LoadAudioTracksFromSelectedJob()
+    {
+        AudioTracks.Clear();
+
+        if (SelectedJob?.Job?.Analysis?.AudioStreams == null)
+            return;
+
+        foreach (var audio in SelectedJob.Job.Analysis.AudioStreams)
+        {
+            AudioTracks.Add(new AudioTrackViewModel
+            {
+                Index = audio.Index,
+                Codec = audio.Codec,
+                Channels = audio.Channels,
+                LanguageName = audio.Language
+            });
+        }
     }
 
     private void RefreshInputs()

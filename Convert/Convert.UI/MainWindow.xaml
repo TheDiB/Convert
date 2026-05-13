@@ -6,10 +6,11 @@
         xmlns:behaviors="clr-namespace:Convert.UI.Behaviors" 
         Icon="Assets/convert.ico"
         Style="{StaticResource MaterialDesignWindow}"
-        Title="{Binding AppVersion, Mode=OneTime}" Height="800" Width="1200" ResizeMode="NoResize" Loaded="Window_Loaded">
+        Title="{Binding AppVersion, Mode=OneTime}" Height="1000" Width="1200" ResizeMode="NoResize" Loaded="Window_Loaded">
 
     <Grid Margin="10">
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
@@ -70,36 +71,66 @@
             <StackPanel Orientation="Horizontal" Margin="10">
 
                 <!-- Conteneur -->
-                <StackPanel Margin="0 0 20 0">
-                    <TextBlock Text="Conteneur" ToolTip="Sélectionnez le conteneur de sortie."/>
+                <StackPanel Margin="0 0 50 0" Orientation="Horizontal">
+                    <TextBlock Text="Conteneur" ToolTip="Sélectionnez le conteneur de sortie." Margin="0 0 10 0" VerticalAlignment="Center"/>
                     <ComboBox ItemsSource="{Binding OptionsVM.Containers}"
-                      SelectedItem="{Binding OptionsVM.Options.OutputContainer}"/>
+                      SelectedItem="{Binding OptionsVM.Options.OutputContainer}"
+                              Style="{StaticResource MaterialDesignOutlinedComboBox}"/>
                 </StackPanel>
 
                 <!-- Codec vidéo -->
-                <StackPanel Margin="0 0 20 0">
-                    <TextBlock Text="Codec vidéo" ToolTip="Sélectionnez le codec vidéo de sortie."/>
+                <StackPanel Margin="0 0 50 0" Orientation="Horizontal">
+                    <TextBlock Text="Codec vidéo" ToolTip="Sélectionnez le codec vidéo de sortie." Margin="0 0 10 0" VerticalAlignment="Center"/>
                     <ComboBox ItemsSource="{Binding OptionsVM.VideoCodecs}"
-                      SelectedItem="{Binding OptionsVM.Options.VideoCodec}"/>
+                      SelectedItem="{Binding OptionsVM.Options.VideoCodec}"
+                              Style="{StaticResource MaterialDesignOutlinedComboBox}"/>
                 </StackPanel>
-
-                <!-- Codec audio -->
-                <StackPanel Margin="0 0 20 0">
-                    <TextBlock Text="Codec audio" ToolTip="Sélectionnez le codec audio de sortie."/>
-                    <ComboBox ItemsSource="{Binding OptionsVM.AudioCodecs}"
-                      SelectedItem="{Binding OptionsVM.Options.AudioCodec}"/>
-                </StackPanel>
-
-                <!-- mov_text → SRT -->
-                <CheckBox Content="Sous-titres mov_text → SRT" ToolTip="Convertir les sous-titres mov_text en SRT"
-                  Margin="20 0 0 0"
-                  IsChecked="{Binding OptionsVM.Options.ConvertMovTextToSrt}"/>
-
             </StackPanel>
         </GroupBox>
 
+        <GroupBox Grid.Row="2" Header="Pistes audio détectées" Margin="0 10 0 10">
+            <DataGrid 
+                ItemsSource="{Binding AudioTracks}"
+                AutoGenerateColumns="False"
+                HeadersVisibility="Column"
+                CanUserAddRows="False"
+                CanUserDeleteRows="False"
+                IsReadOnly="False"
+                Margin="0">
+                <DataGrid.Columns>
+                    <!-- Index -->
+                    <DataGridTextColumn Header="N°" Binding="{Binding Index}" Width="50"/>
+
+                    <!-- Codec -->
+                    <DataGridTextColumn Header="Codec" Binding="{Binding Codec}" Width="100"/>
+
+                    <!-- Canaux -->
+                    <DataGridTextColumn Header="Canaux" Binding="{Binding Channels}" Width="80"/>
+
+                    <!-- Langue -->
+                    <DataGridTextColumn Header="Langue" Binding="{Binding LanguageName}" Width="120"/>
+
+                    <!-- Action (ComboBox) -->
+                    <DataGridTemplateColumn Header="Action" Width="250">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <ComboBox
+                                    ItemsSource="{Binding AvailableProfiles}"
+                                    SelectedValuePath="Profile"
+                                    SelectedValue="{Binding SelectedProfile, Mode=TwoWay}"
+                                    DisplayMemberPath="Label"
+                                    Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                                    Margin="0"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                </DataGrid.Columns>
+            </DataGrid>
+        </GroupBox>
+
         <!-- Liste des jobs -->
-        <GroupBox Grid.Row="2" Header="File d'attente" Margin="0 10 0 0">
+        <GroupBox Grid.Row="3" Header="File d'attente" Margin="0 10 0 0">
             <DataGrid 
                   x:Name="JobList"
                   ItemsSource="{Binding Jobs}"
@@ -156,7 +187,7 @@
         </GroupBox>
 
         <!-- Logs du job sélectionné -->
-        <GroupBox Grid.Row="3" Header="Sortie" Margin="0 10 0 0">
+        <GroupBox Grid.Row="4" Header="Sortie" Margin="0 10 0 0">
             <TextBox
                  x:Name="LogTextBox"
                  Text="{Binding SelectedJob.Log, Mode=OneWay}"

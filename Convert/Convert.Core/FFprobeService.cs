@@ -31,10 +31,10 @@ namespace Convert.Core
                     CreateNoWindow = true
                 }
             };
-            onProcessCreated?.Invoke(process);   // ← LE POINT CLÉ
+
+            onProcessCreated?.Invoke(process);
             process.Start();
 
-            // Si annulation → tuer ffprobe immédiatement
             token.Register(() =>
             {
                 try { if (!process.HasExited) process.Kill(true); }
@@ -42,8 +42,6 @@ namespace Convert.Core
             });
 
             string output = await process.StandardOutput.ReadToEndAsync();
-
-            // Attendre la fin du process AVEC annulation
             await process.WaitForExitAsync(token);
 
             token.ThrowIfCancellationRequested();
@@ -69,18 +67,76 @@ namespace Convert.Core
                     int index = stream.TryGetProperty("index", out var indexProp) ? indexProp.GetInt32() : -1;
                     string type = stream.TryGetProperty("codec_type", out var typeProp) ? typeProp.GetString() ?? "unknown" : "unknown";
 
+                    //
+                    // --- AUDIO ---
+                    //
                     if (type == "audio")
-                        result.AudioStreams.Add(new AudioStreamInfo
+                    {
+                        var audio = new AudioStreamInfo
                         {
                             Index = index,
                             Codec = codec,
                             Channels = stream.TryGetProperty("channels", out var ch) ? ch.GetInt32() : 0,
-                            Bitrate = stream.TryGetProperty("bit_rate", out var br) && int.TryParse(br.GetString(), out var bitrate) ? bitrate : 0
-                        });
+                            Bitrate = stream.TryGetProperty("bit_rate", out var br) && int.TryParse(br.GetString(), out var bitrate) ? bitrate : 0,
 
+                            // Nouveau : Channel layout
+                            ChannelLayout = stream.TryGetProperty("channel_layout", out var layoutProp)
+                                ? layoutProp.GetString() ?? ""
+                                : "",
+
+                            // Nouveau : Profile
+                            Profile = stream.TryGetProperty("profile", out var profileProp)
+                                ? profileProp.GetString() ?? ""
+                                : "",
+
+                            // Nouveau : Codec tag string
+                            CodecTagString = stream.TryGetProperty("codec_tag_string", out var tagProp)
+                                ? tagProp.GetString() ?? ""
+                                : ""
+                        };
+
+                        // --- TAGS (language, title) ---
+                        if (stream.TryGetProperty("tags", out var tagsProp))
+                        {
+                            audio.Language = tagsProp.TryGetProperty("language", out var langProp)
+                                ? langProp.GetString() ?? "und"
+                                : "und";
+
+                            audio.Title = tagsProp.TryGetProperty("title", out var titleProp)
+                                ? titleProp.GetString() ?? ""
+                                : "";
+                        }
+                        else
+                        {
+                            audio.Language = "und";
+                            audio.Title = "";
+                        }
+
+                        // Fallback layout si vide
+                        if (string.IsNullOrWhiteSpace(audio.ChannelLayout))
+                        {
+                            audio.ChannelLayout = audio.Channels switch
+                            {
+                                1 => "mono",
+                                2 => "stereo",
+                                6 => "5.1",
+                                8 => "7.1",
+                                _ => $"{audio.Channels}.0"
+                            };
+                        }
+
+                        result.AudioStreams.Add(audio);
+                    }
+
+                    //
+                    // --- SOUS-TITRES ---
+                    //
                     if (type == "subtitle")
                         result.SubtitleStreams.Add(new SubtitleStreamInfo { Index = index, Codec = codec });
 
+                    //
+                    // --- VIDÉO ---
+                    //
                     if (type == "video")
                     {
                         result.VideoStream = new VideoStreamInfo
@@ -109,6 +165,7 @@ namespace Convert.Core
 
             return result;
         }
+
 
     }
 }

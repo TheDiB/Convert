@@ -1,15 +1,12 @@
 ﻿using Convert.UI.Services;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
 using System.Windows.Input;
 
 namespace Convert.UI.ViewModels
 {
-    public class SettingsViewModel : INotifyPropertyChanged
+    public class SettingsViewModel : ViewModelBase
     {
         private readonly SettingsService _service;
-
-        public event PropertyChangedEventHandler PropertyChanged;
         public event Action Saved;
 
         public ObservableCollection<string> Themes { get; } = new ObservableCollection<string> { "Dark", "Light" };
@@ -62,9 +59,6 @@ namespace Convert.UI.ViewModels
             set { _defaultAudioCodec = value; OnPropertyChanged(nameof(DefaultAudioCodec)); }
         }
 
-        public bool ConvertDtsToEac3 { get; set; }
-        public bool ConvertMovTextToSrt { get; set; }
-
         public int MaxParallelJobs { get; set; }
 
         public string PreferredVideoEngine { get; set; }
@@ -88,9 +82,6 @@ namespace Convert.UI.ViewModels
             DefaultContainer = _service.Settings.DefaultContainer;
             DefaultVideoCodec = _service.Settings.DefaultVideoCodec;
             DefaultAudioCodec = _service.Settings.DefaultAudioCodec;
-
-            ConvertDtsToEac3 = _service.Settings.ConvertDtsToEac3;
-            ConvertMovTextToSrt = _service.Settings.ConvertMovTextToSrt;
 
             MaxParallelJobs = _service.Settings.MaxParallelJobs;
 
@@ -121,9 +112,6 @@ namespace Convert.UI.ViewModels
             _service.Settings.DefaultVideoCodec = DefaultVideoCodec;
             _service.Settings.DefaultAudioCodec = DefaultAudioCodec;
 
-            _service.Settings.ConvertDtsToEac3 = ConvertDtsToEac3;
-            _service.Settings.ConvertMovTextToSrt = ConvertMovTextToSrt;
-
             _service.Settings.MaxParallelJobs = MaxParallelJobs;
 
             _service.Settings.PreferredVideoEngine = PreferredVideoEngine;
@@ -140,8 +128,5 @@ namespace Convert.UI.ViewModels
             _service.Save();
             Saved?.Invoke();
         }
-
-        private void OnPropertyChanged(string name)
-            => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
     }
 }
