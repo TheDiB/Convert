@@ -22,6 +22,7 @@
         public string FfprobePath { get; set; } = "";
 
         public bool AutoDownloadFfmpeg { get; set; } = true;
+        public bool EnableReports { get; set; } = false;
 
         public string FFmpegReleaseURL { get; set; } = "https://api.github.com/repos/BtbN/FFmpeg-Builds/releases/latest";
     }

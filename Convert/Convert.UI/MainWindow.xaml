@@ -19,35 +19,46 @@
         <!-- Barre d'actions -->
         <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0 0 0 10">
             <Button Content="Ajouter un fichier…" Width="150"
+                    HorizontalAlignment="Left"
                     Command="{Binding AddFileCommand}"/>
 
             <Button Content="Ajouter un dossier..."
+                    HorizontalAlignment="Left"
                     Command="{Binding AddFolderCommand}"
                     Margin="10 0 10 0"/>
 
-            <Button Content="Analyser" Command="{Binding AnalyzeAllCommand}" IsEnabled="{Binding CanAnalyze}" Margin="10 0 10 0"/>
-            <Button Content="Transcoder" Command="{Binding TranscodeAllCommand}" IsEnabled="{Binding CanTranscode}" Margin="10 0 10 0"/>
-            <Button Content="Arrêter" Command="{Binding StopAllCommand}" IsEnabled="{Binding CanStopAll}" Background="Red" Foreground="White" FontWeight="Bold" />
+            <Button Content="Analyser" Command="{Binding AnalyzeAllCommand}" 
+                    HorizontalAlignment="Left"
+                    IsEnabled="{Binding CanAnalyze}" Margin="10 0 10 0"/>
 
-            <Button Command="{Binding ClearCommand}" ToolTip="Effacer la file" Margin="10 0 10 0">
+            <Button Content="Transcoder" Command="{Binding TranscodeAllCommand}" 
+                    HorizontalAlignment="Left"
+                    IsEnabled="{Binding CanTranscode}" Margin="10 0 10 0"/>
+
+            <Button Content="Arrêter" Command="{Binding StopAllCommand}" 
+                    HorizontalAlignment="Left"
+                    IsEnabled="{Binding CanStopAll}" Background="Red" Foreground="White" FontWeight="Bold" />
+
+            <Button Command="{Binding ClearCommand}" ToolTip="Effacer la file" Margin="10 0 10 0"
+                    HorizontalAlignment="Left">
                 <StackPanel Orientation="Horizontal">
                     <material:PackIcon Kind="Broom" Width="18" Height="18" Margin="0 0 5 0"/>
                 </StackPanel>
             </Button>
 
-            <Button ToolTip="Paramètres" Click="OpenSettings_Click">
+            <Button ToolTip="Paramètres" Click="OpenSettings_Click" HorizontalAlignment="Right">
                 <StackPanel Orientation="Horizontal">
                     <material:PackIcon Kind="Cog" Width="20" Height="20"/>
                 </StackPanel>
             </Button>
 
-            <Button ToolTip="A propos de Convert" Margin="10 0 0 0" Click="OpenAbout_Click">
+            <Button ToolTip="A propos de Convert" Margin="10 0 0 0" Click="OpenAbout_Click" HorizontalContentAlignment="Right">
                 <StackPanel Orientation="Horizontal">
                     <material:PackIcon Kind="Information" Width="20" Height="20"/>
                 </StackPanel>
             </Button>
 
-            <Button ToolTip="Quitter Convert" Margin="10 0 0 0" Click="Quit_Click">
+            <Button ToolTip="Quitter Convert" Margin="10 0 0 0" Click="Quit_Click" HorizontalAlignment="Right">
                 <StackPanel Orientation="Horizontal">
                     <material:PackIcon Kind="ExitToApp" Width="20" Height="20"/>
                 </StackPanel>
@@ -87,7 +98,7 @@
         </GroupBox>
 
         <!-- Liste des jobs -->
-        <GroupBox Grid.Row="2" Header="File d'attente" Margin="0 0 0 0">
+        <GroupBox Grid.Row="2" Header="File d'attente" Margin="0 10 0 0">
             <DataGrid 
                   x:Name="JobList"
                   ItemsSource="{Binding Jobs}"
@@ -144,7 +155,7 @@
         </GroupBox>
 
         <!-- Logs du job sélectionné -->
-        <GroupBox Grid.Row="3" Header="Sortie" Margin="0 0 0 0">
+        <GroupBox Grid.Row="3" Header="Sortie" Margin="0 10 0 0">
             <TextBox
                  x:Name="LogTextBox"
                  Text="{Binding SelectedJob.Log, Mode=OneWay}"

@@ -28,6 +28,14 @@
         <TabControl Grid.Row="1"
                     material:ColorZoneAssist.Mode="PrimaryDark">
 
+            <!-- Global -->
+            <TabItem Header="Général">
+                <StackPanel Margin="20">
+                    <CheckBox Content="Génération des rapports" ToolTip="Activer la génération des rapports d'analyse dans le dossier 'Mes Documents\Convert\Reports'"
+                        IsChecked="{Binding EnableReports}"/>
+                </StackPanel>
+            </TabItem>
+
             <!-- Apparence -->
             <TabItem Header="Apparence">
                 <StackPanel Margin="20">

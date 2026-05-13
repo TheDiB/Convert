@@ -76,6 +76,7 @@ namespace Convert.UI.ViewModels
 
 
         public bool AutoDownloadFfmpeg { get; set; }
+        public bool EnableReports { get; set; }
 
         public SettingsViewModel(SettingsService service)
         {
@@ -100,6 +101,8 @@ namespace Convert.UI.ViewModels
             FfprobePath = _service.Settings.FfprobePath;
 
             AutoDownloadFfmpeg = _service.Settings.AutoDownloadFfmpeg;
+            EnableReports = _service.Settings.EnableReports;
+
             FfmpegReleaseURL = _service.Settings.FFmpegReleaseURL;
 
             SaveCommand = new RelayCommand(_ => Save());
@@ -130,6 +133,8 @@ namespace Convert.UI.ViewModels
             _service.Settings.FfprobePath = FfprobePath;
 
             _service.Settings.AutoDownloadFfmpeg = AutoDownloadFfmpeg;
+            _service.Settings.EnableReports = EnableReports;
+
             _service.Settings.FFmpegReleaseURL = FfmpegReleaseURL;
 
             _service.Save();

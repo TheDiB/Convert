@@ -255,7 +255,8 @@ public class MainViewModel : INotifyPropertyChanged
             job.RefreshStatus();
         }
 
-        FFmpeg.ExportReport(entries, "Convert_Global_Analysis");
+        if (_settings.Settings.EnableReports)
+            FFmpeg.ExportReport(entries, "Convert_Global_Analysis");
     }
 
     private async Task TranscodeAllAsync()
@@ -387,7 +388,8 @@ public class MainViewModel : INotifyPropertyChanged
         else
             reportEntry = new AnalysisReportModel { FilePath = jobVM.Job.InputPath, FileName = Path.GetFileName(jobVM.Job.InputPath), VideoCodec = "unknown", AudioCodecs = "unknown", FileSizeBytes = new FileInfo(jobVM.Job.InputPath).Length };
 
-        FFmpeg.ExportReport(new[] { reportEntry }, "Convert_Single_Analysis");
+        if (_settings.Settings.EnableReports)
+            FFmpeg.ExportReport(new[] { reportEntry }, "Convert_Single_Analysis");
     }
 
     private async Task TranscodeOneAsync(JobViewModel jobVM)
