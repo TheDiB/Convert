@@ -67,7 +67,6 @@ namespace Convert.UI
         {
             Resources.MergedDictionaries.Clear();
 
-            // 1) Thème clair ou sombre
             var themeDict = new ResourceDictionary
             {
                 Source = new Uri(
@@ -77,13 +76,11 @@ namespace Convert.UI
                 )
             };
 
-            // 2) Defaults (obligatoire)
             var defaults = new ResourceDictionary
             {
                 Source = new Uri("pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesign3.Defaults.xaml")
             };
 
-            // 3) Couleur primaire
             var primary = new ResourceDictionary
             {
                 Source = new Uri(
@@ -91,7 +88,6 @@ namespace Convert.UI
                 )
             };
 
-            // 4) Accent (obligatoire)
             var accent = new ResourceDictionary
             {
                 Source = new Uri(
@@ -99,14 +95,6 @@ namespace Convert.UI
                 )
             };
 
-            // 5) Styles MaterialDesign (obligatoire)
-            var materialDesign = new ResourceDictionary
-            {
-                Source = new Uri("pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesign3.Defaults.xaml")
-            };
-
-            // Ajout dans le bon ordre
-            Resources.MergedDictionaries.Add(materialDesign);
             Resources.MergedDictionaries.Add(themeDict);
             Resources.MergedDictionaries.Add(defaults);
             Resources.MergedDictionaries.Add(primary);

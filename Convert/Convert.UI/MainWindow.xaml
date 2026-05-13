@@ -5,6 +5,7 @@
         xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
         xmlns:behaviors="clr-namespace:Convert.UI.Behaviors" 
         Icon="Assets/convert.ico"
+        Style="{StaticResource MaterialDesignWindow}"
         Title="{Binding AppVersion, Mode=OneTime}" Height="800" Width="1200" ResizeMode="NoResize" Loaded="Window_Loaded">
 
     <Grid Margin="10">
