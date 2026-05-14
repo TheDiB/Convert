@@ -20,7 +20,6 @@ namespace Convert.UI.ViewModels
         };
         public ObservableCollection<string> Containers { get; } = new ObservableCollection<string> { "mkv", "mp4", "mov" };
         public ObservableCollection<string> VideoCodecs { get; } = new ObservableCollection<string> { "copy", "h264", "hevc" };
-        public ObservableCollection<string> AudioCodecs { get; } = new ObservableCollection<string> { "copy", "aac", "ac3", "eac3" };
         public ObservableCollection<string> VideoEngines { get; } = new ObservableCollection<string> { "CPU", "NVENC", "QSV", "AMF" };
 
         // --- Propriétés bindables ---
@@ -52,13 +51,6 @@ namespace Convert.UI.ViewModels
             set { _defaultVideoCodec = value; OnPropertyChanged(nameof(DefaultVideoCodec)); }
         }
 
-        private string _defaultAudioCodec;
-        public string DefaultAudioCodec
-        {
-            get => _defaultAudioCodec;
-            set { _defaultAudioCodec = value; OnPropertyChanged(nameof(DefaultAudioCodec)); }
-        }
-
         public int MaxParallelJobs { get; set; }
 
         public string PreferredVideoEngine { get; set; }
@@ -81,7 +73,6 @@ namespace Convert.UI.ViewModels
             PrimaryColor = _service.Settings.PrimaryColor;
             DefaultContainer = _service.Settings.DefaultContainer;
             DefaultVideoCodec = _service.Settings.DefaultVideoCodec;
-            DefaultAudioCodec = _service.Settings.DefaultAudioCodec;
 
             MaxParallelJobs = _service.Settings.MaxParallelJobs;
 
@@ -110,7 +101,6 @@ namespace Convert.UI.ViewModels
 
             _service.Settings.DefaultContainer = DefaultContainer;
             _service.Settings.DefaultVideoCodec = DefaultVideoCodec;
-            _service.Settings.DefaultAudioCodec = DefaultAudioCodec;
 
             _service.Settings.MaxParallelJobs = MaxParallelJobs;
 

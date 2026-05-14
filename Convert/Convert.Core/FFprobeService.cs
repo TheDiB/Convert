@@ -1,6 +1,7 @@
 ﻿using Convert.Models;
 using System.Diagnostics;
 using System.Globalization;
+using System.Text;
 using System.Text.Json;
 
 namespace Convert.Core
@@ -79,17 +80,17 @@ namespace Convert.Core
                             Channels = stream.TryGetProperty("channels", out var ch) ? ch.GetInt32() : 0,
                             Bitrate = stream.TryGetProperty("bit_rate", out var br) && int.TryParse(br.GetString(), out var bitrate) ? bitrate : 0,
 
-                            // Nouveau : Channel layout
+                            // Channel layout
                             ChannelLayout = stream.TryGetProperty("channel_layout", out var layoutProp)
                                 ? layoutProp.GetString() ?? ""
                                 : "",
 
-                            // Nouveau : Profile
+                            // Profile
                             Profile = stream.TryGetProperty("profile", out var profileProp)
                                 ? profileProp.GetString() ?? ""
                                 : "",
 
-                            // Nouveau : Codec tag string
+                            // Codec tag string
                             CodecTagString = stream.TryGetProperty("codec_tag_string", out var tagProp)
                                 ? tagProp.GetString() ?? ""
                                 : ""
@@ -103,7 +104,7 @@ namespace Convert.Core
                                 : "und";
 
                             audio.Title = tagsProp.TryGetProperty("title", out var titleProp)
-                                ? titleProp.GetString() ?? ""
+                                ? FixEncoding(titleProp.GetString()) ?? ""
                                 : "";
                         }
                         else
@@ -166,6 +167,14 @@ namespace Convert.Core
             return result;
         }
 
+        private static string FixEncoding(string input)
+        {
+            if (string.IsNullOrEmpty(input))
+                return input;
 
+            // Re-décodage ANSI → UTF8
+            var bytes = Encoding.Default.GetBytes(input);
+            return Encoding.UTF8.GetString(bytes);
+        }
     }
 }

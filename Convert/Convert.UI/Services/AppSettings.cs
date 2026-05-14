@@ -9,7 +9,7 @@
 
         public string DefaultContainer { get; set; } = "mkv";
         public string DefaultVideoCodec { get; set; } = "copy";
-        public string DefaultAudioCodec { get; set; } = "copy";
+        //public string DefaultAudioCodec { get; set; } = "copy";
 
         public int MaxParallelJobs { get; set; } = 2;
 

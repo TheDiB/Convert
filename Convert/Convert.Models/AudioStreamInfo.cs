@@ -1,5 +1,30 @@
 ﻿namespace Convert.Models
 {
+    public static class AudioLanguageStreamInfo
+    {
+        public static readonly Dictionary<string, string> LanguageMap = new()
+        {
+            { "fre", "French" },
+            { "fra", "French" },
+            { "eng", "Anglais" },
+            { "spa", "Espagnol" },
+            { "ita", "Italien" },
+            { "ger", "Allemand" },
+            { "jpn", "Japonais" },
+            { "und", "Inconnu" }
+        };
+
+        public static readonly Dictionary<string, string> CodecMap = new()
+        {
+            { "ac3", "Dolby Digital (AC3)" },
+            { "eac3", "Dolby Digital Plus (EAC3)" },
+            { "dts", "DTS" },
+            { "truehd", "Dolby TrueHD" },
+            { "aac", "Advanced Audio Coding" },
+            { "und", "Inconnu" }
+        };
+    }
+
     public class AudioStreamInfo
     {
         public int Index { get; set; }

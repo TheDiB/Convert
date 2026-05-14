@@ -7,18 +7,6 @@ namespace Convert.Core
     public class FFmpegEngine
     {
         private readonly string _ffmpegPath;
-        private static readonly Dictionary<string, string> LanguageMap = new()
-        {
-            { "fre", "Français" },
-            { "fra", "Français" },
-            { "eng", "Anglais" },
-            { "spa", "Espagnol" },
-            { "ita", "Italien" },
-            { "ger", "Allemand" },
-            { "jpn", "Japonais" },
-            { "und", "Inconnu" }
-        };
-
 
         public FFmpegEngine(string ffmpegPath)
         {
@@ -55,7 +43,6 @@ namespace Convert.Core
             // --- AUDIO ---
             //
             int outAudioIndex = 0;
-
             foreach (var audio in analysis.AudioStreams)
             {
                 // Récupérer le profil choisi pour cette piste
@@ -84,7 +71,7 @@ namespace Convert.Core
 
                 // Langue
                 string langCode = audio.Language?.ToLower() ?? "und";
-                string langName = LanguageMap.ContainsKey(langCode) ? LanguageMap[langCode] : langCode;
+                string langName = AudioLanguageStreamInfo.LanguageMap.ContainsKey(langCode) ? AudioLanguageStreamInfo.LanguageMap[langCode] : langCode;
 
                 // Canaux + layout
                 int channels = audio.Channels;

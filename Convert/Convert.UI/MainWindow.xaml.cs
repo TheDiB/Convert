@@ -2,6 +2,7 @@
 using Convert.UI.ViewModels;
 using Convert.UI.Views;
 using System.Windows;
+using System.Windows.Controls;
 
 namespace Convert.UI
 {
@@ -67,6 +68,17 @@ namespace Convert.UI
         private void LogTextBox_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
         {
             LogTextBox.ScrollToEnd();
+        }
+
+        private void DataGrid_BeginningEdit(object sender, DataGridBeginningEditEventArgs e)
+        {
+            // Toujours autoriser l'édition
+        }
+
+        private void DataGrid_PreparingCellForEdit(object sender, DataGridPreparingCellForEditEventArgs e)
+        {
+            if (e.EditingElement is ComboBox cb)
+                cb.Focus();
         }
     }
 }

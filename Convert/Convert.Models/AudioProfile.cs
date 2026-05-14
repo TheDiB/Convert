@@ -20,19 +20,5 @@
             Profile = profile;
             Label = label;
         }
-
-        public override string ToString() => Label;
-
-        public override bool Equals(object obj)
-        {
-            if (obj is AudioProfileItem other)
-                return other.Profile == Profile;
-
-            return false;
-        }
-
-        public override int GetHashCode()
-            => Profile.GetHashCode();
     }
-
 }

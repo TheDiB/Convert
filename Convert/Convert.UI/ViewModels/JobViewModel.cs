@@ -1,5 +1,6 @@
 ﻿using Convert.Core;
 using Convert.UI.Services;
+using System.Collections.ObjectModel;
 using System.Text;
 using System.Windows.Input;
 
@@ -22,6 +23,8 @@ namespace Convert.UI.ViewModels
         public ICommand TranscodeCommand { get; }
 
         public bool IsRunning => _job.Status == "Transcoding" || _job.Status == "Analyzing";
+
+        public ObservableCollection<AudioTrackViewModel> AudioTracks { get; } = new ObservableCollection<AudioTrackViewModel>();
 
         public JobViewModel(TranscodeJob job, Action<JobViewModel> onDelete, Func<JobViewModel, Task> onAnalyze, Func<JobViewModel, Task> onTranscode)
         {

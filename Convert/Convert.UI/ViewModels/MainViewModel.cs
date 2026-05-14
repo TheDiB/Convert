@@ -39,7 +39,6 @@ public class MainViewModel : ViewModelBase
 
     public string SelectedContainer { get; private set; }
     public string SelectedVideoCodec { get; private set; }
-    public string SelectedAudioCodec { get; private set; }
     public string PreferredVideoEngine { get; private set; }
 
     private bool _isFFmpegChecking;
@@ -85,7 +84,6 @@ public class MainViewModel : ViewModelBase
     }
     private string _ffmpegNotificationMessage = "";
 
-
     public bool CanTranscode => Jobs.Any() && !IsFFmpegBusy;
     public bool CanAnalyze => Jobs.Any() && !IsFFmpegBusy;
     public bool CanStopAll
@@ -93,47 +91,17 @@ public class MainViewModel : ViewModelBase
         get
         {
             return true;
-            if (!Jobs.Any())
-                return false;
-            else
-            {
-                if (Jobs.Any(j => j.Status == "Transcoding" || j.Status == "Analyzing"))
-                    return true;
-                else
-                {
-                    if (Jobs.All(j => j.Status == "Stopped" || j.Status == "Pending" || j.Status == "Done" || j.Status == "Faled" || j.Status == "Error" || j.Status == "Failed"))
-                        return false;
-                    else
-                        return true;
-                }
-            }
         }
     }
 
     public JobViewModel SelectedJob
     {
         get => _selectedJob;
-        set { _selectedJob = value; OnPropertyChanged(); LoadAudioTracksFromSelectedJob(); }
+        set { _selectedJob = value; OnPropertyChanged(); }
     }
 
     public TranscodeOptions Options { get; } = new();
-    public int MaxParallelJobs
-    {
-        get => _parallelLimiter.CurrentCount;
-    }
-
-    public ObservableCollection<AudioProfileItem> AudioProfiles { get; } =
-        new ObservableCollection<AudioProfileItem>
-        {
-        new AudioProfileItem(AudioProfile.Copy, "Copie (sans modification)"),
-        new AudioProfileItem(AudioProfile.Eac3_5_1, "Dolby Digital Plus EAC3 5.1 (640 kbps)"),
-        new AudioProfileItem(AudioProfile.Ac3_5_1, "Dolby Digital AC3 5.1 (640 kbps)"),
-        new AudioProfileItem(AudioProfile.Ac3_2_0, "Stéréo AC3 2.0 (192 kbps)"),
-        new AudioProfileItem(AudioProfile.Mp3_2_0, "Stéréo MP3 2.0 (320 kbps)")
-        };
-
-    public ObservableCollection<AudioTrackViewModel> AudioTracks { get; }
-    = new ObservableCollection<AudioTrackViewModel>();
+    public int MaxParallelJobs => _parallelLimiter.CurrentCount;
 
     private readonly FFprobeService _probe;
     private readonly FFmpegEngine _engine;
@@ -154,14 +122,15 @@ public class MainViewModel : ViewModelBase
         var version = FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location);
         AppVersion = string.Concat("Convert v", version.FileMajorPart, '.', version.FileMinorPart);
 
-        // appliquer les valeurs par défaut
         SelectedContainer = _settings.Settings.DefaultContainer;
         SelectedVideoCodec = _settings.Settings.DefaultVideoCodec;
-        SelectedAudioCodec = _settings.Settings.DefaultAudioCodec;
+        PreferredVideoEngine = _settings.Settings.PreferredVideoEngine;
+
         _parallelLimiter = new SemaphoreSlim(_settings.Settings.MaxParallelJobs);
 
         OptionsVM = new OptionsViewModel(Options);
         Jobs = new ObservableCollection<JobViewModel>();
+
         var ffmpegPath = Path.Combine(AppContext.BaseDirectory, "ffmpeg", "ffmpeg.exe");
         var ffprobePath = Path.Combine(AppContext.BaseDirectory, "ffmpeg", "ffprobe.exe");
         _probe = new FFprobeService(ffprobePath);
@@ -174,18 +143,13 @@ public class MainViewModel : ViewModelBase
         ClearCommand = new RelayCommand(_ => ClearAll());
         StopAllCommand = new RelayCommand(async _ => StopAll(), () => !IsStoppingAll);
 
-        Jobs.CollectionChanged += (_, __) =>
-        {
-            RefreshInputs();
-        };
+        Jobs.CollectionChanged += (_, __) => RefreshInputs();
     }
 
     public void ReloadSettings()
     {
-        // Réappliquer les valeurs par défaut
         SelectedContainer = _settings.Settings.DefaultContainer;
         SelectedVideoCodec = _settings.Settings.DefaultVideoCodec;
-        SelectedAudioCodec = _settings.Settings.DefaultAudioCodec;
         PreferredVideoEngine = _settings.Settings.PreferredVideoEngine;
     }
 
@@ -221,9 +185,7 @@ public class MainViewModel : ViewModelBase
                 .Where(f => validExtensions.Contains(Path.GetExtension(f).ToLower()));
 
             foreach (var file in files)
-            {
                 AddJobFromFile(file);
-            }
 
             if (files.Count() > 0)
                 Notify($"{files.Count()} fichier(s) ajouté(s) avec succès");
@@ -243,18 +205,28 @@ public class MainViewModel : ViewModelBase
         {
             SelectedJob = job;
             job.Job.Mode = JobMode.AnalyzeOnly;
+
             await job.Job.RunAsync(
-                    _probe,
-                    _engine,
-                    Options,
-                    log => job.AppendLog(log), _globalCts.Token, () => StopAllRequested);
+                _probe,
+                _engine,
+                Options,
+                log => job.AppendLog(log),
+                _globalCts.Token,
+                () => StopAllRequested);
 
             LoadAudioTracksFromSelectedJob();
 
             if (job.Job.Status != "Error")
                 entries.Add(job.Job.Analysis.ToReportEntry());
             else
-                entries.Add(new AnalysisReportModel { FilePath = job.Job.InputPath, FileName = Path.GetFileName(job.Job.InputPath), VideoCodec = "unknown", AudioCodecs = "unknown", FileSizeBytes = new FileInfo(job.Job.InputPath).Length });
+                entries.Add(new AnalysisReportModel
+                {
+                    FilePath = job.Job.InputPath,
+                    FileName = Path.GetFileName(job.Job.InputPath),
+                    VideoCodec = "unknown",
+                    AudioCodecs = "unknown",
+                    FileSizeBytes = new FileInfo(job.Job.InputPath).Length
+                });
 
             job.RefreshStatus();
         }
@@ -268,16 +240,13 @@ public class MainViewModel : ViewModelBase
         var tasks = new List<Task>();
 
         foreach (var jobVM in Jobs)
-        {
             tasks.Add(RunJobWithLimit(jobVM, JobMode.Transcode));
-        }
 
         await Task.WhenAll(tasks);
     }
 
     private async Task RunJobWithLimit(JobViewModel jobVM, JobMode mode)
     {
-        // Si STOP ALL est actif → on annule immédiatement ce job
         if (StopAllRequested)
         {
             jobVM.Job.Status = "Canceled";
@@ -288,7 +257,6 @@ public class MainViewModel : ViewModelBase
 
         try
         {
-            // Double sécurité : STOP ALL peut avoir été activé entre temps
             if (StopAllRequested)
             {
                 jobVM.Job.Status = "Canceled";
@@ -298,10 +266,8 @@ public class MainViewModel : ViewModelBase
             jobVM.Job.Mode = mode;
 
             Options.AudioTrackProfiles.Clear();
-            foreach (var track in AudioTracks)
-            {
+            foreach (var track in jobVM.AudioTracks)
                 Options.AudioTrackProfiles[track.Index] = track.SelectedProfile;
-            }
 
             await jobVM.Job.RunAsync(
                 _probe,
@@ -309,8 +275,7 @@ public class MainViewModel : ViewModelBase
                 Options,
                 log => jobVM.AppendLog(log),
                 _globalCts.Token,
-                () => StopAllRequested
-            );
+                () => StopAllRequested);
         }
         finally
         {
@@ -318,51 +283,45 @@ public class MainViewModel : ViewModelBase
         }
     }
 
-
     private void AddJobFromFile(string filePath)
     {
         if (Jobs.Any(j => j.FileName == Path.GetFileName(filePath)))
             return;
 
         StopAllRequested = false;
+
         var job = new TranscodeJob(filePath);
         job.SetPending();
+
         var vm = new JobViewModel(job, RemoveJob, AnalyzeOneAsync, TranscodeOneAsync);
         Jobs.Add(vm);
-        AudioTracks.Clear();
     }
 
     private void RemoveJob(JobViewModel jobVM)
     {
-        // Si le job tourne encore, on le stoppe proprement
         jobVM.Job.Stop();
         Jobs.Remove(jobVM);
 
         if (SelectedJob == jobVM)
-        {
             SelectedJob = null;
-            AudioTracks.Clear();
-        }
     }
 
     private void ClearAll()
     {
         foreach (var job in Jobs.ToList())
         {
-            job.Job.Stop();   // stoppe FFmpeg si en cours
-            Jobs.Remove(job); // supprime de la liste
+            job.Job.Stop();
+            Jobs.Remove(job);
         }
 
-        AudioTracks.Clear();
         SelectedJob = null;
-
         Notify($"Liste d'attente effacée");
     }
 
     private void StopAll()
     {
         if (StopAllRequested)
-            return; // ← clics suivants ignorés
+            return;
 
         StopAllRequested = true;
         IsStoppingAll = true;
@@ -377,14 +336,8 @@ public class MainViewModel : ViewModelBase
                 case "Transcoding":
                     job.Job.Cts.Cancel();
                     job.Job.Cts.Dispose();
-                    job.Job.Cts = new CancellationTokenSource(); // ← IMPORTANT
+                    job.Job.Cts = new CancellationTokenSource();
                     job.Job.Status = "Canceled";
-                    break;
-
-                case "Done":
-                case "Failed":
-                case "Canceled":
-                    // on ne touche pas
                     break;
             }
         }
@@ -392,30 +345,27 @@ public class MainViewModel : ViewModelBase
         Notify("Toutes les tâches ont été stoppées");
         IsStoppingAll = false;
 
-        // On recrée un token pour la prochaine session
         _globalCts = new CancellationTokenSource();
     }
 
     private async Task AnalyzeOneAsync(JobViewModel jobVM)
     {
         jobVM.Job.Mode = JobMode.AnalyzeOnly;
+
         Options.AudioTrackProfiles.Clear();
-        foreach (var track in AudioTracks)
-        {
+        foreach (var track in jobVM.AudioTracks)
             Options.AudioTrackProfiles[track.Index] = track.SelectedProfile;
-        }
-        await jobVM.Job.RunAsync(_probe, _engine, Options, log => jobVM.AppendLog(log), _globalCts.Token, () => StopAllRequested);
+
+        await jobVM.Job.RunAsync(
+            _probe,
+            _engine,
+            Options,
+            log => jobVM.AppendLog(log),
+            _globalCts.Token,
+            () => StopAllRequested);
+
         LoadAudioTracksFromSelectedJob();
         RefreshInputs();
-
-        AnalysisReportModel reportEntry;
-        if (jobVM.Job.Status != "Error")
-            reportEntry = jobVM.Job.Analysis.ToReportEntry();
-        else
-            reportEntry = new AnalysisReportModel { FilePath = jobVM.Job.InputPath, FileName = Path.GetFileName(jobVM.Job.InputPath), VideoCodec = "unknown", AudioCodecs = "unknown", FileSizeBytes = new FileInfo(jobVM.Job.InputPath).Length };
-
-        if (_settings.Settings.EnableReports)
-            FFmpeg.ExportReport(new[] { reportEntry }, "Convert_Single_Analysis");
     }
 
     private async Task TranscodeOneAsync(JobViewModel jobVM)
@@ -423,30 +373,42 @@ public class MainViewModel : ViewModelBase
         jobVM.Job.Mode = JobMode.Transcode;
 
         Options.AudioTrackProfiles.Clear();
-        foreach (var track in AudioTracks)
-        {
+        foreach (var track in jobVM.AudioTracks)
             Options.AudioTrackProfiles[track.Index] = track.SelectedProfile;
-        }
 
-        await jobVM.Job.RunAsync(_probe, _engine, Options, log => jobVM.AppendLog(log), _globalCts.Token, () => StopAllRequested);
+        await jobVM.Job.RunAsync(
+            _probe,
+            _engine,
+            Options,
+            log => jobVM.AppendLog(log),
+            _globalCts.Token,
+            () => StopAllRequested);
+
         RefreshInputs();
     }
 
     private void LoadAudioTracksFromSelectedJob()
     {
-        AudioTracks.Clear();
-
         if (SelectedJob?.Job?.Analysis?.AudioStreams == null)
             return;
 
+        var tracks = SelectedJob.AudioTracks;
+        tracks.Clear();
+
         foreach (var audio in SelectedJob.Job.Analysis.AudioStreams)
         {
-            AudioTracks.Add(new AudioTrackViewModel
+            tracks.Add(new AudioTrackViewModel
             {
                 Index = audio.Index,
-                Codec = audio.Codec,
+                Codec = AudioLanguageStreamInfo.CodecMap.ContainsKey(audio.Codec)
+                        ? AudioLanguageStreamInfo.CodecMap[audio.Codec]
+                        : audio.Codec,
                 Channels = audio.Channels,
-                LanguageName = audio.Language
+                LanguageName = AudioLanguageStreamInfo.LanguageMap.ContainsKey(audio.Language)
+                        ? AudioLanguageStreamInfo.LanguageMap[audio.Language]
+                        : audio.Language,
+                Bitrate = audio.Bitrate,
+                Title = audio.Title
             });
         }
     }
