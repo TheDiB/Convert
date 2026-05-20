@@ -13,6 +13,8 @@ namespace Convert.Core
         public Process? FFprobeProcess { get; private set; }
         public Process? FFmpegProcess { get; private set; }
         public FileAnalysisResult? Analysis { get; private set; }
+        public bool AnalysisEventFired { get; private set; }
+
 
         public enum JobMode
         {
@@ -22,6 +24,8 @@ namespace Convert.Core
         public JobMode Mode { get; set; }
         public event Action ProgressChanged;
         public CancellationTokenSource Cts { get; set; } = new CancellationTokenSource();
+
+        public event Action<FileAnalysisResult>? AnalysisCompleted;
 
         public TranscodeJob(string inputPath)
         {
@@ -41,7 +45,7 @@ namespace Convert.Core
             }
         }
 
-        public async Task RunAsync(
+        public async Task<JobResult> RunAsync(
             FFprobeService probe,
             FFmpegEngine engine,
             TranscodeOptions options,
@@ -57,29 +61,55 @@ namespace Convert.Core
                 Status = "Analyzing";
                 Analysis = await probe.AnalyzeAsync(InputPath, token, p => FFprobeProcess = p);
 
+                if (!AnalysisEventFired)
+                {
+                    AnalysisEventFired = true;
+                    AnalysisCompleted?.Invoke(Analysis);
+                }
+
                 if (Mode == JobMode.AnalyzeOnly)
                 {
                     DumpAnalysisToLog(Analysis, log);
                     Status = "Analyzed";
-                    return;
+                    return JobResult.Success;
                 }
 
                 Status = "Building command";
                 string args = await engine.BuildCommandAsync(Analysis, options);
 
                 Status = "Transcoding";
-                int code = await engine.ExecuteAsync(args, log, line => ParseProgress(line, Analysis.DurationSeconds), token, p => FFmpegProcess = p);
+                int code = await engine.ExecuteAsync(
+                    args,
+                    log,
+                    line => ParseProgress(line, Analysis.DurationSeconds),
+                    token,
+                    p => FFmpegProcess = p);
 
-                Status = code == 0 ? "Done" : (isStopAllRequested() ? "Canceled" : "Failed");
+                if (code == 0)
+                {
+                    Status = "Done";
+                    return JobResult.Success;
+                }
+
+                if (isStopAllRequested() || this.Cts.IsCancellationRequested)
+                {
+                    Status = "Canceled";
+                    return JobResult.Canceled;
+                }
+
+                Status = "Failed";
+                return JobResult.Failed;
             }
             catch (OperationCanceledException)
             {
-                Status = isStopAllRequested() ? "Canceled" : "Failed";
+                Status = "Canceled";
+                return JobResult.Canceled;
             }
             catch (Exception ex)
             {
-                Status = isStopAllRequested() ? "Canceled" : "Error";
+                Status = "Error";
                 log($"ERROR: {ex.Message}");
+                return JobResult.Error;
             }
         }
 
@@ -151,6 +181,5 @@ namespace Convert.Core
 
             Status = "Canceled";
         }
-
     }
 }

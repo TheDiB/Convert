@@ -9,7 +9,6 @@
 
         public string DefaultContainer { get; set; } = "mkv";
         public string DefaultVideoCodec { get; set; } = "copy";
-        //public string DefaultAudioCodec { get; set; } = "copy";
 
         public int MaxParallelJobs { get; set; } = 2;
 
@@ -20,6 +19,8 @@
 
         public bool AutoDownloadFfmpeg { get; set; } = true;
         public bool EnableReports { get; set; } = false;
+
+        public bool AutoAnalyze { get; set; } = true;
 
         public string FFmpegReleaseURL { get; set; } = "https://api.github.com/repos/BtbN/FFmpeg-Builds/releases/latest";
     }

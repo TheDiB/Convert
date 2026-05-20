@@ -28,7 +28,6 @@ public class MainViewModel : ViewModelBase
     private SemaphoreSlim _parallelLimiter;
     public OptionsViewModel OptionsVM { get; }
     public IDialogService Dialogs { get; }
-    private JobViewModel _selectedJob;
     private SettingsService _settings;
     public FFmpegService FFmpeg { get; set; }
 
@@ -94,10 +93,16 @@ public class MainViewModel : ViewModelBase
         }
     }
 
+    private JobViewModel _selectedJob;
     public JobViewModel SelectedJob
     {
         get => _selectedJob;
-        set { _selectedJob = value; OnPropertyChanged(); }
+        set
+        {
+            _selectedJob = value;
+            OnPropertyChanged();
+            LoadAudioTracksFromSelectedJob();
+        }
     }
 
     public TranscodeOptions Options { get; } = new();
@@ -162,8 +167,14 @@ public class MainViewModel : ViewModelBase
 
         if (dialog.ShowDialog() == true)
         {
-            AddJobFromFile(dialog.FileName);
+            var vm = AddJobFromFile(dialog.FileName);
             Notify($"Fichier ajouté avec succès");
+
+            if (_settings.Settings.AutoAnalyze)
+            {
+                await Task.Yield(); // laisse le temps au constructeur de VM de finir
+                _ = AnalyzeOneAsync(vm);
+            }
         }
     }
 
@@ -185,7 +196,14 @@ public class MainViewModel : ViewModelBase
                 .Where(f => validExtensions.Contains(Path.GetExtension(f).ToLower()));
 
             foreach (var file in files)
-                AddJobFromFile(file);
+            {
+                var vm = AddJobFromFile(file);
+                if (_settings.Settings.AutoAnalyze)
+                {
+                    await Task.Yield(); // laisse le temps au constructeur de VM de finir
+                    _ = AnalyzeOneAsync(vm);
+                }
+            }
 
             if (files.Count() > 0)
                 Notify($"{files.Count()} fichier(s) ajouté(s) avec succès");
@@ -216,23 +234,23 @@ public class MainViewModel : ViewModelBase
 
             LoadAudioTracksFromSelectedJob();
 
-            if (job.Job.Status != "Error")
-                entries.Add(job.Job.Analysis.ToReportEntry());
-            else
-                entries.Add(new AnalysisReportModel
-                {
-                    FilePath = job.Job.InputPath,
-                    FileName = Path.GetFileName(job.Job.InputPath),
-                    VideoCodec = "unknown",
-                    AudioCodecs = "unknown",
-                    FileSizeBytes = new FileInfo(job.Job.InputPath).Length
-                });
+            //if (job.Job.Status != "Error")
+            //    entries.Add(job.Job.Analysis.ToReportEntry());
+            //else
+            //    entries.Add(new AnalysisReportModel
+            //    {
+            //        FilePath = job.Job.InputPath,
+            //        FileName = Path.GetFileName(job.Job.InputPath),
+            //        VideoCodec = "unknown",
+            //        AudioCodecs = "unknown",
+            //        FileSizeBytes = new FileInfo(job.Job.InputPath).Length
+            //    });
 
             job.RefreshStatus();
         }
 
-        if (_settings.Settings.EnableReports)
-            FFmpeg.ExportReport(entries, "Convert_Global_Analysis");
+        //if (_settings.Settings.EnableReports)
+        //    FFmpeg.ExportReport(entries, "Convert_Global_Analysis");
     }
 
     private async Task TranscodeAllAsync()
@@ -269,13 +287,22 @@ public class MainViewModel : ViewModelBase
             foreach (var track in jobVM.AudioTracks)
                 Options.AudioTrackProfiles[track.Index] = track.SelectedProfile;
 
-            await jobVM.Job.RunAsync(
+            var result = await jobVM.Job.RunAsync(
                 _probe,
                 _engine,
                 Options,
                 log => jobVM.AppendLog(log),
                 _globalCts.Token,
                 () => StopAllRequested);
+
+            jobVM.Job.Status = result switch
+            {
+                JobResult.Success => "Done",
+                JobResult.Canceled => "Canceled",
+                JobResult.Failed => "Failed",
+                JobResult.Error => "Error",
+                _ => "Unknown"
+            };
         }
         finally
         {
@@ -283,18 +310,22 @@ public class MainViewModel : ViewModelBase
         }
     }
 
-    private void AddJobFromFile(string filePath)
+
+    private JobViewModel AddJobFromFile(string filePath)
     {
         if (Jobs.Any(j => j.FileName == Path.GetFileName(filePath)))
-            return;
+            return null;
 
         StopAllRequested = false;
 
         var job = new TranscodeJob(filePath);
         job.SetPending();
+        job.AnalysisCompleted += OnAnalysisCompleted;
 
-        var vm = new JobViewModel(job, RemoveJob, AnalyzeOneAsync, TranscodeOneAsync);
+        var vm = new JobViewModel(job, RemoveJob, AnalyzeOneAsync, TranscodeOneAsync, _settings, FFmpeg);
         Jobs.Add(vm);
+
+        return vm;
     }
 
     private void RemoveJob(JobViewModel jobVM)
@@ -366,24 +397,30 @@ public class MainViewModel : ViewModelBase
 
         LoadAudioTracksFromSelectedJob();
         RefreshInputs();
+
+        //if (_settings.Settings.EnableReports)
+        //{
+        //    var entries = new List<AnalysisReportModel>();
+        //    if (jobVM.Job.Status != "Error")
+        //        entries.Add(jobVM.Job.Analysis.ToReportEntry());
+        //    else
+        //        entries.Add(new AnalysisReportModel
+        //        {
+        //            FilePath = jobVM.Job.InputPath,
+        //            FileName = Path.GetFileName(jobVM.Job.InputPath),
+        //            VideoCodec = "unknown",
+        //            AudioCodecs = "unknown",
+        //            FileSizeBytes = new FileInfo(jobVM.Job.InputPath).Length
+        //        });
+        //    FFmpeg.ExportReport(entries, "Convert_Unique_Analysis");
+        //}
     }
 
     private async Task TranscodeOneAsync(JobViewModel jobVM)
     {
-        jobVM.Job.Mode = JobMode.Transcode;
-
-        Options.AudioTrackProfiles.Clear();
-        foreach (var track in jobVM.AudioTracks)
-            Options.AudioTrackProfiles[track.Index] = track.SelectedProfile;
-
-        await jobVM.Job.RunAsync(
-            _probe,
-            _engine,
-            Options,
-            log => jobVM.AppendLog(log),
-            _globalCts.Token,
-            () => StopAllRequested);
-
+        jobVM.Job.Status = "Queued";
+        await RunJobWithLimit(jobVM, JobMode.Transcode);
+        jobVM.Job.Status = "Done";
         RefreshInputs();
     }
 
@@ -419,5 +456,14 @@ public class MainViewModel : ViewModelBase
         OnPropertyChanged(nameof(CanTranscode));
         OnPropertyChanged(nameof(CanAnalyze));
         OnPropertyChanged(nameof(CanStopAll));
+    }
+
+    private void OnAnalysisCompleted(FileAnalysisResult analysis)
+    {
+        if (!_settings.Settings.EnableReports)
+            return;
+
+        var entry = analysis.ToReportEntry();
+        FFmpeg.ExportReport(new[] { entry }, "Convert_Unique_Analysis");
     }
 }

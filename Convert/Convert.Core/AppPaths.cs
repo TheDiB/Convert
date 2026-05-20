@@ -16,7 +16,7 @@
 
         public static string GetReportPath(string baseName)
         {
-            string fileName = $"{baseName}_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}.csv";
+            var fileName = $"{baseName}_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}_{Guid.NewGuid():N}.csv";
             return Path.Combine(ReportsFolder, fileName);
         }
     }

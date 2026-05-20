@@ -6,7 +6,7 @@
         xmlns:behaviors="clr-namespace:Convert.UI.Behaviors" 
         Icon="Assets/convert.ico"
         Style="{StaticResource MaterialDesignWindow}"
-        Title="{Binding AppVersion, Mode=OneTime}" Height="1000" Width="1200" ResizeMode="NoResize" Loaded="Window_Loaded">
+        Title="{Binding AppVersion, Mode=OneTime}" Height="1200" Width="1200" ResizeMode="CanResizeWithGrip" Loaded="Window_Loaded">
 
     <Grid Margin="10">
         <Grid.RowDefinitions>
@@ -67,94 +67,95 @@
             </Button>
         </StackPanel>
 
-        <GroupBox Grid.Row="1" Header="Options de transcodage" Margin="0 0 0 10">
-            <StackPanel Orientation="Horizontal" Margin="10">
+        <GroupBox Grid.Row="2" Header="Pistes détectées" Margin="0 10 0 10">
+            <TabControl SelectedIndex="0" Style="{StaticResource MaterialDesignTabControl}">
+                <!-- Onglet AUDIO -->
+                <TabItem>
+                    <TabItem.Header>
+                        <StackPanel Orientation="Horizontal">
+                            <material:PackIcon Kind="VolumeHigh" Margin="0 0 5 0"/>
+                            <TextBlock Text="{Binding SelectedJob.Job.Analysis.AudioStreams.Count, StringFormat='Audio ({0})', FallbackValue='Audio'}"/>
+                        </StackPanel>
+                    </TabItem.Header>
+                    <DataGrid 
+                    ItemsSource="{Binding SelectedJob.AudioTracks}"
+                    SelectionMode="Single"
+                    AutoGenerateColumns="False"
+                    HeadersVisibility="Column"
+                    CanUserAddRows="False"
+                    CanUserDeleteRows="False"
+                    IsReadOnly="False"
+                    RowHeight="60"
+                    Margin="0">
 
-                <!-- Conteneur -->
-                <StackPanel Margin="0 0 50 0" Orientation="Horizontal">
-                    <TextBlock Text="Conteneur" ToolTip="Sélectionnez le conteneur de sortie." Margin="0 0 10 0" VerticalAlignment="Center"/>
-                    <ComboBox ItemsSource="{Binding OptionsVM.Containers}"
-                      SelectedItem="{Binding OptionsVM.Options.OutputContainer}"
-                              Style="{StaticResource MaterialDesignOutlinedComboBox}"/>
-                </StackPanel>
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="N°" Binding="{Binding Index}" Width="50" />
+                            <DataGridTextColumn Header="Codec" Binding="{Binding Codec}" Width="180" />
+                            <DataGridTextColumn Header="Canaux" Binding="{Binding Channels}" Width="80" />
+                            <DataGridTextColumn Header="Débit" Binding="{Binding Bitrate}" Width="80" />
+                            <DataGridTextColumn Header="Langue" Binding="{Binding LanguageName}" Width="100" />
+                            <DataGridTextColumn Header="Titre" Binding="{Binding Title}" Width="300" />
 
-                <!-- Codec vidéo -->
-                <StackPanel Margin="0 0 50 0" Orientation="Horizontal">
-                    <TextBlock Text="Codec vidéo" ToolTip="Sélectionnez le codec vidéo de sortie." Margin="0 0 10 0" VerticalAlignment="Center"/>
-                    <ComboBox ItemsSource="{Binding OptionsVM.VideoCodecs}"
-                      SelectedItem="{Binding OptionsVM.Options.VideoCodec}"
-                              Style="{StaticResource MaterialDesignOutlinedComboBox}"/>
-                </StackPanel>
-            </StackPanel>
-        </GroupBox>
+                            <DataGridTemplateColumn Header="Action" Width="200" IsReadOnly="False">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <ComboBox
+                                ItemsSource="{Binding AvailableProfiles}"
+                                SelectedValuePath="Profile"
+                                SelectedValue="{Binding SelectedProfile, Mode=TwoWay}"
+                                DisplayMemberPath="Label"
+                                Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                                FontSize="12"
+                                Margin="-12"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
 
-        <GroupBox Grid.Row="2" Header="Pistes audio détectées" Margin="0 10 0 10">
-            <DataGrid 
-                ItemsSource="{Binding SelectedJob.AudioTracks}"
-                BeginningEdit="DataGrid_BeginningEdit"
-                PreparingCellForEdit="DataGrid_PreparingCellForEdit"                
-                SelectionMode="Single"
-                AutoGenerateColumns="False"
-                HeadersVisibility="Column"
-                CanUserAddRows="False"
-                CanUserDeleteRows="False"
-                IsReadOnly="False"
-                RowHeight="60"                
-                Margin="0">
-                <DataGrid.Columns>
-                    <!-- Index -->
-                    <DataGridTextColumn Header="N°" Binding="{Binding Index}" Width="50" />
+                                <DataGridTemplateColumn.CellEditingTemplate>
+                                    <DataTemplate>
+                                        <ComboBox
+                                ItemsSource="{Binding AvailableProfiles}"
+                                SelectedValuePath="Profile"
+                                SelectedValue="{Binding SelectedProfile, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                DisplayMemberPath="Label"
+                                Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                                FontSize="12"
+                                Margin="-12"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellEditingTemplate>
+                            </DataGridTemplateColumn>
 
-                    <!-- Codec -->
-                    <DataGridTextColumn Header="Codec" Binding="{Binding Codec}" Width="180" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </TabItem>
 
-                    <!-- Canaux Bitrate -->
-                    <DataGridTextColumn Header="Canaux" Binding="{Binding Channels}" Width="80" />
+                <!-- Onglet VIDEO (à venir) -->
+                <TabItem>
+                    <TabItem.Header>
+                        <StackPanel Orientation="Horizontal">
+                            <material:PackIcon Kind="Monitor" Margin="0 0 5 0"/>
+                            <TextBlock Text="Vidéo"/>
+                        </StackPanel>
+                    </TabItem.Header>
+                    <TextBlock Text="À venir..." 
+                   HorizontalAlignment="Center" 
+                   VerticalAlignment="Center"
+                   Foreground="Gray"/>
+                </TabItem>
 
-                    <!-- Bitrate -->
-                    <DataGridTextColumn Header="Débit" Binding="{Binding Bitrate}" Width="80" />
-
-                    <!-- Langue -->
-                    <DataGridTextColumn Header="Langue" Binding="{Binding LanguageName}" Width="100" />
-
-                    <!-- Title -->
-                    <DataGridTextColumn Header="Titre" Binding="{Binding Title}" Width="300" />
-
-                    <!-- Action (ComboBox) -->
-                    <DataGridTemplateColumn Header="Action" Width="200" IsReadOnly="False">
-                        <DataGridTemplateColumn.CellEditingTemplate>
-                            <DataTemplate>
-                                <ComboBox
-                                    ItemsSource="{Binding AvailableProfiles}"
-                                    SelectedValuePath="Profile"
-                                    SelectedValue="{Binding SelectedProfile, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                    DisplayMemberPath="Label"
-                                    Style="{StaticResource MaterialDesignOutlinedComboBox}"
-                                    FontSize="12"
-                                    Margin="-12"/>
-                            </DataTemplate>
-                        </DataGridTemplateColumn.CellEditingTemplate>
-
-                        <!-- 🔥 Le point clé : forcer la cellule en mode édition -->
-                        <DataGridTemplateColumn.CellTemplate>
-                            <DataTemplate>
-                                <ComboBox
-                                    ItemsSource="{Binding AvailableProfiles}"
-                                    SelectedValuePath="Profile"
-                                    SelectedValue="{Binding SelectedProfile, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                    DisplayMemberPath="Label"
-                                    Style="{StaticResource MaterialDesignOutlinedComboBox}"
-                                    FontSize="12"
-                                    Margin="-12"
-                                    IsHitTestVisible="False"/>
-                            </DataTemplate>
-                        </DataGridTemplateColumn.CellTemplate>
-                    </DataGridTemplateColumn>
-
-
-
-                </DataGrid.Columns>
-            </DataGrid>
+                <!-- Onglet SOUS-TITRES (à venir) -->
+                <TabItem>
+                    <TabItem.Header>
+                        <StackPanel Orientation="Horizontal">
+                            <material:PackIcon Kind="Subtitles" Margin="0 0 5 0"/>
+                            <TextBlock Text="Sous-titres"/>
+                        </StackPanel>
+                    </TabItem.Header>
+                    <TextBlock Text="À venir..." 
+                   HorizontalAlignment="Center" 
+                   VerticalAlignment="Center"
+                   Foreground="Gray"/>
+                </TabItem>
+            </TabControl>
         </GroupBox>
 
         <!-- Liste des jobs -->

@@ -63,6 +63,7 @@ namespace Convert.UI.ViewModels
 
         public bool AutoDownloadFfmpeg { get; set; }
         public bool EnableReports { get; set; }
+        public bool AutoAnalyze { get; set; }
 
         public SettingsViewModel(SettingsService service)
         {
@@ -84,6 +85,7 @@ namespace Convert.UI.ViewModels
 
             AutoDownloadFfmpeg = _service.Settings.AutoDownloadFfmpeg;
             EnableReports = _service.Settings.EnableReports;
+            AutoAnalyze = _service.Settings.AutoAnalyze;
 
             FfmpegReleaseURL = _service.Settings.FFmpegReleaseURL;
 
@@ -112,6 +114,7 @@ namespace Convert.UI.ViewModels
 
             _service.Settings.AutoDownloadFfmpeg = AutoDownloadFfmpeg;
             _service.Settings.EnableReports = EnableReports;
+            _service.Settings.AutoAnalyze = AutoAnalyze;
 
             _service.Settings.FFmpegReleaseURL = FfmpegReleaseURL;
 

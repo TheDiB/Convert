@@ -32,8 +32,8 @@
             <!-- Global -->
             <TabItem Header="Général">
                 <StackPanel Margin="20">
-                    <CheckBox Content="Génération des rapports" ToolTip="Activer la génération des rapports d'analyse dans le dossier 'Mes Documents\Convert\Reports'"
-                        IsChecked="{Binding EnableReports}"/>
+                    <CheckBox Content="Génération des rapports" ToolTip="Activer la génération des rapports d'analyse dans le dossier 'Mes Documents\Convert\Reports'" IsChecked="{Binding EnableReports}"/>
+                    <CheckBox Content="Analyse automatique des fichiers" ToolTip="Analyser automatique les fichiers dès leur ajout à la liste" IsChecked="{Binding AutoAnalyze}"/>
                 </StackPanel>
             </TabItem>
 
@@ -56,42 +56,17 @@
             <!-- Conversion -->
             <TabItem Header="Conversion">
                 <StackPanel Margin="20">
+                    <!--<TextBlock Text="Formats pris en charge" FontWeight="Bold"/>
+                    <TextBox Text="{Binding SupportedFileTypes}"/>-->
 
-                    <!--<ComboBox ItemsSource="{Binding Containers}"
-                              SelectedItem="{Binding DefaultContainer}"
-                              material:HintAssist.Hint="Conteneur par défaut"/>
-
-                    <ComboBox ItemsSource="{Binding VideoCodecs}"
-                              SelectedItem="{Binding DefaultVideoCodec}"
-                              material:HintAssist.Hint="Codec vidéo par défaut"/>
-
-                    <ComboBox ItemsSource="{Binding AudioCodecs}"
-                              SelectedItem="{Binding DefaultAudioCodec}"
-                              material:HintAssist.Hint="Codec audio par défaut"/>-->
-
-                    <TextBlock Text="Formats pris en charge" FontWeight="Bold"/>
-                    <TextBox Text="{Binding SupportedFileTypes}"/>
+                    <TextBlock Text="Nombre de process simultanés" ToolTip="Nombre de threads FFpmeg simultanés lancés au maximum" FontWeight="Bold"/>
+                    <Slider Minimum="1" Maximum="8"
+                        Value="{Binding MaxParallelJobs}"
+                        TickFrequency="1"
+                        IsSnapToTickEnabled="True"/>
+                    <TextBlock Text="{Binding MaxParallelJobs, StringFormat='Actuellement : {0} process'}"/>
                 </StackPanel>
             </TabItem>
-
-            <!-- Performance -->
-            <!--<TabItem Header="Performance">
-                <StackPanel Margin="20">
-
-                    <TextBlock Text="Jobs en parallèle" FontWeight="Bold"/>
-                    <Slider Minimum="1" Maximum="8"
-                            Value="{Binding MaxParallelJobs}"
-                            TickFrequency="1"
-                            IsSnapToTickEnabled="True"/>
-
-                    <TextBlock Text="{Binding MaxParallelJobs, StringFormat='Actuellement : {0} jobs'}"/>
-
-                    <TextBlock Text="Moteur vidéo" FontWeight="Bold"/>
-                    <ComboBox ItemsSource="{Binding VideoEngines}"
-                              SelectedItem="{Binding PreferredVideoEngine}"
-                              material:HintAssist.Hint="Moteur vidéo"/>
-                </StackPanel>
-            </TabItem>-->
 
             <!-- FFmpeg -->
             <TabItem Header="FFmpeg">

@@ -26,6 +26,7 @@
 
   <ItemGroup>
     <Folder Include="ffmpeg\" />
+    <Folder Include="Models\" />
   </ItemGroup>
 
   <ItemGroup>
