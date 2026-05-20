@@ -22,21 +22,57 @@ namespace Convert.Core
             //
             // --- VIDÉO ---
             //
-            sb.Append("-map 0:v ");
 
-            if (options.VideoCodec == "copy")
-                sb.Append("-c:v copy ");
-            else
-                sb.Append($"-c:v {options.VideoCodec} ");
+            int outVideoIndex = 0;
+            foreach (var video in analysis.VideoStreams)
+            {
+                // Profil choisi ?
+                if (!options.VideoTrackProfiles.TryGetValue(video.Index, out var profile))
+                    profile = VideoProfile.Copy;
+
+                // IGNORE → ne pas mapper cette piste
+                if (profile == VideoProfile.Ignore)
+                    continue;
+
+                // Mapper la piste vidéo
+                sb.Append($"-map 0:{video.Index} ");
+
+                // Logique par profil
+                switch (profile)
+                {
+                    case VideoProfile.Copy:
+                        sb.Append($"-c:v:{outVideoIndex} copy ");
+                        break;
+
+                    case VideoProfile.H265_High:
+                        sb.Append($"-c:v:{outVideoIndex} libx265 -preset slow -crf 18 ");
+                        break;
+
+                    case VideoProfile.H264_Medium:
+                        sb.Append($"-c:v:{outVideoIndex} libx264 -preset medium -crf 20 ");
+                        break;
+
+                    case VideoProfile.H264_Low:
+                        sb.Append($"-c:v:{outVideoIndex} libx264 -preset fast -crf 23 ");
+                        break;
+
+                    case VideoProfile.Ignore:
+                        continue;
+                }
+
+                outVideoIndex++;
+            }
+
+            // Si aucune piste vidéo n’a été mappée → désactiver la vidéo
+            if (outVideoIndex == 0)
+            {
+                sb.Append("-vn ");
+            }
 
             //
             // --- SOUS-TITRES ---
             //
             sb.Append("-map 0:s? ");
-
-            //if (options.ConvertMovTextToSrt)
-            //    sb.Append("-c:s srt ");
-            //else
             sb.Append("-c:s copy ");
 
             //

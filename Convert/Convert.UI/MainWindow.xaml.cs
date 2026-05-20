@@ -80,5 +80,14 @@ namespace Convert.UI
             if (e.EditingElement is ComboBox cb)
                 cb.Focus();
         }
+
+        private void TracksTabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (JobList != null)
+            {
+                JobList.CommitEdit(DataGridEditingUnit.Cell, true);
+                JobList.CommitEdit(DataGridEditingUnit.Row, true);
+            }
+        }
     }
 }

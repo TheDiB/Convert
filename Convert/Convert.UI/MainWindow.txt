@@ -68,7 +68,7 @@
         </StackPanel>
 
         <GroupBox Grid.Row="2" Header="Pistes détectées" Margin="0 10 0 10">
-            <TabControl SelectedIndex="0" Style="{StaticResource MaterialDesignTabControl}" SelectionChanged="TracksTabControl_SelectionChanged">
+            <TabControl SelectedIndex="0" Style="{StaticResource MaterialDesignTabControl}">
                 <!-- Onglet AUDIO -->
                 <TabItem>
                     <TabItem.Header>
@@ -92,7 +92,7 @@
                             <DataGridTextColumn Header="N°" Binding="{Binding Index}" Width="50" />
                             <DataGridTextColumn Header="Codec" Binding="{Binding Codec}" Width="180" />
                             <DataGridTextColumn Header="Canaux" Binding="{Binding Channels}" Width="80" />
-                            <DataGridTextColumn Header="Débit (kbps)" Binding="{Binding Bitrate}" Width="120" />
+                            <DataGridTextColumn Header="Débit" Binding="{Binding Bitrate}" Width="80" />
                             <DataGridTextColumn Header="Langue" Binding="{Binding LanguageName}" Width="100" />
                             <DataGridTextColumn Header="Titre" Binding="{Binding Title}" Width="300" />
 
@@ -102,7 +102,7 @@
                                         <ComboBox
                                             ItemsSource="{Binding AvailableProfiles}"
                                             SelectedValuePath="Profile"
-                                            SelectedValue="{Binding SelectedProfile, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                            SelectedValue="{Binding SelectedProfile, Mode=TwoWay}"
                                             DisplayMemberPath="Label"
                                             Style="{StaticResource MaterialDesignOutlinedComboBox}"
                                             FontSize="12"
@@ -144,34 +144,22 @@
 
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="N°" Binding="{Binding Index}" Width="50"/>
-                            <DataGridTextColumn Header="Codec" Binding="{Binding Codec}" Width="180"/>
-                            <DataGridTextColumn Header="Largeur (px)" Binding="{Binding Width}" Width="120"/>
-                            <DataGridTextColumn Header="Hauteur (px)" Binding="{Binding Height}" Width="120"/>
-                            <DataGridTextColumn Header="FPS" Binding="{Binding FPS}" Width="100"/>
-                            <DataGridTextColumn Header="Débit (kbps)" Binding="{Binding Bitrate}" Width="120"/>
+                            <DataGridTextColumn Header="Codec" Binding="{Binding Codec}" Width="120"/>
+                            <DataGridTextColumn Header="Largeur de trame" Binding="{Binding Width}" Width="120"/>
+                            <DataGridTextColumn Header="Hauteur de trame" Binding="{Binding Height}" Width="120"/>
+                            <DataGridTextColumn Header="FPS" Binding="{Binding FPS}" Width="80"/>
+                            <DataGridTextColumn Header="Débit" Binding="{Binding Bitrate}" Width="120"/>
 
-                            <DataGridTemplateColumn Header="Action" Width="300">
+                            <DataGridTemplateColumn Header="Action" Width="200">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <ComboBox ItemsSource="{Binding AvailableProfiles}"
-                                            SelectedValue="{Binding SelectedProfile, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                            SelectedValuePath="Profile"
-                                            DisplayMemberPath="Label"
-                                            Style="{StaticResource MaterialDesignOutlinedComboBox}"/>
+                                            SelectedValue="{Binding SelectedProfile, Mode=TwoWay}"
+                                            Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                                            DisplayMemberPath="Label"/>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
-
-                                <DataGridTemplateColumn.CellEditingTemplate>
-                                    <DataTemplate>
-                                        <ComboBox ItemsSource="{Binding AvailableProfiles}"
-                                            SelectedValue="{Binding SelectedProfile, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                            SelectedValuePath="Profile"
-                                            DisplayMemberPath="Label"
-                                            Style="{StaticResource MaterialDesignOutlinedComboBox}"/>
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellEditingTemplate>
                             </DataGridTemplateColumn>
-
 
                         </DataGrid.Columns>
                     </DataGrid>

@@ -4,6 +4,7 @@
     {
         public string FilePath { get; set; } = string.Empty;
         public List<AudioStreamInfo> AudioStreams { get; set; } = new();
+        public List<VideoStreamInfo> VideoStreams { get; set; } = new();
         public List<SubtitleStreamInfo> SubtitleStreams { get; set; } = new();
         public VideoStreamInfo? VideoStream { get; set; } = new();
         public double DurationSeconds { get; set; }

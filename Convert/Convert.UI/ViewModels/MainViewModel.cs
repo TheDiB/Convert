@@ -101,7 +101,7 @@ public class MainViewModel : ViewModelBase
         {
             _selectedJob = value;
             OnPropertyChanged();
-            LoadAudioTracksFromSelectedJob();
+            LoadTracksFromSelectedJob();
         }
     }
 
@@ -232,25 +232,10 @@ public class MainViewModel : ViewModelBase
                 _globalCts.Token,
                 () => StopAllRequested);
 
-            LoadAudioTracksFromSelectedJob();
-
-            //if (job.Job.Status != "Error")
-            //    entries.Add(job.Job.Analysis.ToReportEntry());
-            //else
-            //    entries.Add(new AnalysisReportModel
-            //    {
-            //        FilePath = job.Job.InputPath,
-            //        FileName = Path.GetFileName(job.Job.InputPath),
-            //        VideoCodec = "unknown",
-            //        AudioCodecs = "unknown",
-            //        FileSizeBytes = new FileInfo(job.Job.InputPath).Length
-            //    });
+            LoadTracksFromSelectedJob();
 
             job.RefreshStatus();
         }
-
-        //if (_settings.Settings.EnableReports)
-        //    FFmpeg.ExportReport(entries, "Convert_Global_Analysis");
     }
 
     private async Task TranscodeAllAsync()
@@ -286,6 +271,10 @@ public class MainViewModel : ViewModelBase
             Options.AudioTrackProfiles.Clear();
             foreach (var track in jobVM.AudioTracks)
                 Options.AudioTrackProfiles[track.Index] = track.SelectedProfile;
+
+            Options.VideoTrackProfiles.Clear();
+            foreach (var track in jobVM.VideoTracks)
+                Options.VideoTrackProfiles[track.Index] = track.SelectedProfile;
 
             var result = await jobVM.Job.RunAsync(
                 _probe,
@@ -402,6 +391,10 @@ public class MainViewModel : ViewModelBase
         foreach (var track in jobVM.AudioTracks)
             Options.AudioTrackProfiles[track.Index] = track.SelectedProfile;
 
+        Options.VideoTrackProfiles.Clear();
+        foreach (var track in jobVM.VideoTracks)
+            Options.VideoTrackProfiles[track.Index] = track.SelectedProfile;
+
         await jobVM.Job.RunAsync(
             _probe,
             _engine,
@@ -410,7 +403,7 @@ public class MainViewModel : ViewModelBase
             _globalCts.Token,
             () => StopAllRequested);
 
-        LoadAudioTracksFromSelectedJob();
+        LoadTracksFromSelectedJob();
         RefreshInputs();
     }
 
@@ -422,31 +415,81 @@ public class MainViewModel : ViewModelBase
         RefreshInputs();
     }
 
-    private void LoadAudioTracksFromSelectedJob()
+    private void LoadTracksFromSelectedJob()
     {
-        if (SelectedJob?.Job?.Analysis?.AudioStreams == null)
+        if (SelectedJob?.Job?.Analysis == null)
             return;
 
-        var tracks = SelectedJob.AudioTracks;
-        tracks.Clear();
+        //
+        // AUDIO
+        //
+        var audioTracks = SelectedJob.AudioTracks;
 
         foreach (var audio in SelectedJob.Job.Analysis.AudioStreams)
         {
-            tracks.Add(new AudioTrackViewModel
+            var existing = audioTracks.FirstOrDefault(t => t.Index == audio.Index);
+
+            if (existing == null)
             {
-                Index = audio.Index,
-                Codec = AudioLanguageStreamInfo.CodecMap.ContainsKey(audio.Codec)
-                        ? AudioLanguageStreamInfo.CodecMap[audio.Codec]
-                        : audio.Codec,
-                Channels = audio.Channels,
-                LanguageName = AudioLanguageStreamInfo.LanguageMap.ContainsKey(audio.Language)
-                        ? AudioLanguageStreamInfo.LanguageMap[audio.Language]
-                        : audio.Language,
-                Bitrate = audio.Bitrate,
-                Title = audio.Title
-            });
+                audioTracks.Add(new AudioTrackViewModel
+                {
+                    Index = audio.Index,
+                    Codec = AudioLanguageStreamInfo.CodecMap.ContainsKey(audio.Codec)
+                            ? AudioLanguageStreamInfo.CodecMap[audio.Codec]
+                            : audio.Codec,
+                    Channels = audio.Channels,
+                    LanguageName = AudioLanguageStreamInfo.LanguageMap.ContainsKey(audio.Language)
+                            ? AudioLanguageStreamInfo.LanguageMap[audio.Language]
+                            : audio.Language,
+                    Bitrate = audio.Bitrate,
+                    Title = audio.Title
+                });
+            }
+            else
+            {
+                // mettre à jour les infos techniques sans toucher au SelectedProfile
+                existing.Codec = audio.Codec;
+                existing.Channels = audio.Channels;
+                existing.LanguageName = audio.Language;
+                existing.Bitrate = audio.Bitrate;
+                existing.Title = audio.Title;
+            }
+        }
+
+        //
+        // VIDEO
+        //
+        var videoTracks = SelectedJob.VideoTracks;
+
+        foreach (var video in SelectedJob.Job.Analysis.VideoStreams)
+        {
+            var existing = videoTracks.FirstOrDefault(t => t.Index == video.Index);
+
+            if (existing == null)
+            {
+                videoTracks.Add(new VideoTrackViewModel
+                {
+                    Index = video.Index,
+                    Codec = VideoLanguageStreamInfo.CodecMap.ContainsKey(video.Codec)
+                            ? VideoLanguageStreamInfo.CodecMap[video.Codec]
+                            : video.Codec,
+                    Width = video.Width,
+                    Height = video.Height,
+                    FPS = video.FPS,
+                    Bitrate = video.Bitrate
+                });
+            }
+            else
+            {
+                existing.Codec = video.Codec;
+                existing.Width = video.Width;
+                existing.Height = video.Height;
+                existing.FPS = video.FPS;
+                existing.Bitrate = video.Bitrate;
+            }
         }
     }
+
 
     private void RefreshInputs()
     {

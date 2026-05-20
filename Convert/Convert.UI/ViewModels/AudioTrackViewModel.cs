@@ -22,7 +22,7 @@ public class AudioTrackViewModel : ViewModelBase
             new AudioProfileItem(AudioProfile.Ignore, "Ignorer cette piste")
         };
 
-    private AudioProfile _selectedProfile;
+    private AudioProfile _selectedProfile = AudioProfile.Copy;
     public AudioProfile SelectedProfile
     {
         get => _selectedProfile;

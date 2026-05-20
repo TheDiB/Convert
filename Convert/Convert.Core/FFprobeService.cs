@@ -10,7 +10,6 @@ namespace Convert.Core
     {
         private readonly string _ffprobePath;
 
-
         public FFprobeService(string ffprobePath)
         {
             _ffprobePath = ffprobePath;
@@ -78,7 +77,7 @@ namespace Convert.Core
                             Index = index,
                             Codec = codec,
                             Channels = stream.TryGetProperty("channels", out var ch) ? ch.GetInt32() : 0,
-                            Bitrate = stream.TryGetProperty("bit_rate", out var br) && int.TryParse(br.GetString(), out var bitrate) ? bitrate : 0,
+                            Bitrate = stream.TryGetProperty("bit_rate", out var br) && int.TryParse(br.GetString(), out var bitrate) ? bitrate / 1000 : 0,
 
                             // Channel layout
                             ChannelLayout = stream.TryGetProperty("channel_layout", out var layoutProp)
@@ -140,13 +139,69 @@ namespace Convert.Core
                     //
                     if (type == "video")
                     {
-                        result.VideoStream = new VideoStreamInfo
+                        var video = new VideoStreamInfo();
+                        video.Index = index;
+                        video.Codec = codec;
+                        video.Width = stream.TryGetProperty("width", out var w) ? w.GetInt32() : 0;
+                        video.Height = stream.TryGetProperty("height", out var h) ? h.GetInt32() : 0;
+
+                        // Profile
+                        video.Profile = stream.TryGetProperty("profile", out var profileProp)
+                              ? profileProp.GetString() ?? ""
+                              : "";
+
+                        // Codec tag string
+                        video.CodecTagString = stream.TryGetProperty("codec_tag_string", out var tagProp)
+                              ? tagProp.GetString() ?? ""
+                              : "";
+
+                        // --- TAGS (language, title) ---
+                        if (stream.TryGetProperty("tags", out var tagsProp))
                         {
-                            Index = index,
-                            Codec = codec,
-                            Resolution = $"{stream.GetProperty("width").GetInt32()}x{stream.GetProperty("height").GetInt32()}",
-                            PixelFormat = stream.TryGetProperty("pix_fmt", out var pf) ? pf.GetString() ?? "" : ""
-                        };
+                            video.Language = tagsProp.TryGetProperty("language", out var langProp)
+                                ? langProp.GetString() ?? "und"
+                                : "und";
+
+                            video.Title = tagsProp.TryGetProperty("title", out var titleProp)
+                                ? FixEncoding(titleProp.GetString()) ?? ""
+                                : "";
+                        }
+                        else
+                        {
+                            video.Language = "und";
+                            video.Title = "";
+                        }
+
+                        if (stream.TryGetProperty("avg_frame_rate", out var afr) && afr.ToString() != "0/0")
+                        {
+                            var parts = afr.ToString().Split('/');
+                            if (parts.Length == 2 &&
+                                double.TryParse(parts[0], out double num) &&
+                                double.TryParse(parts[1], out double den) &&
+                                den > 0)
+                            {
+                                video.FPS = Math.Truncate((num / den) * 1000) / 1000;
+                            }
+                        }
+
+                        if (stream.TryGetProperty("tags", out var tags) && tags.ToString() != string.Empty)
+                        {
+                            if (tags.TryGetProperty("BPS", out var bpsProp) && long.TryParse(bpsProp.GetString(), out long bps))
+                            {
+                                video.Bitrate = (int)(bps / 1000);
+                            }
+                            else if (tags.TryGetProperty("NUMBER_OF_BYTES", out var bytesProp) &&
+                                     long.TryParse(bytesProp.GetString(), out long bytes) &&
+                                     tags.TryGetProperty("DURATION", out var durProp) &&
+                                     TimeSpan.TryParse(durProp.GetString(), out var duration) &&
+                                     duration.TotalSeconds > 0)
+                            {
+                                long bits = bytes * 8;
+                                video.Bitrate = (int)(bits / duration.TotalSeconds / 1000);
+                            }
+                        }
+
+                        result.VideoStreams.Add(video);
                     }
                 }
             }

@@ -26,8 +26,8 @@ namespace Convert.UI.ViewModels
 
         public bool IsRunning => _job.Status == "Transcoding" || _job.Status == "Analyzing";
 
-        public ObservableCollection<AudioTrackViewModel> AudioTracks { get; }
-            = new ObservableCollection<AudioTrackViewModel>();
+        public ObservableCollection<AudioTrackViewModel> AudioTracks { get; } = new ObservableCollection<AudioTrackViewModel>();
+        public ObservableCollection<VideoTrackViewModel> VideoTracks { get; } = new ObservableCollection<VideoTrackViewModel>();
 
         public ICommand StopCommand { get; }
         public ICommand DeleteCommand { get; }
@@ -49,14 +49,12 @@ namespace Convert.UI.ViewModels
             _settings = settings;
             _ffmpeg = ffmpeg;
 
-            // 🔥 Mise à jour UI sur changement de statut
             _job.StatusChanged += () =>
             {
                 OnPropertyChanged(nameof(Status));
                 OnPropertyChanged(nameof(IsRunning));
             };
 
-            // 🔥 Mise à jour UI sur changement de progression
             _job.ProgressChanged += () => OnPropertyChanged(nameof(Progress));
 
             StopCommand = new RelayCommand(_ => _job.Stop());

@@ -15,7 +15,6 @@ namespace Convert.Core
         public FileAnalysisResult? Analysis { get; private set; }
         public bool AnalysisEventFired { get; private set; }
 
-
         public enum JobMode
         {
             AnalyzeOnly,
@@ -137,17 +136,54 @@ namespace Convert.Core
 
         private void DumpAnalysisToLog(FileAnalysisResult analysis, Action<string> log)
         {
-            log($"=== ANALYSE DU FICHIER ===");
+            log("=== ANALYSE DU FICHIER ===");
             log($"Fichier : {analysis.FilePath}");
             log($"Durée   : {analysis.DurationSeconds:F2} sec");
+            log("");
+
+            //
+            // --- VIDEO ---
+            //
+            log("=== PISTES VIDEO ===");
+            if (analysis.VideoStreams.Count == 0)
+            {
+                log("Aucune piste vidéo détectée");
+            }
+            else
+            {
+                foreach (var v in analysis.VideoStreams)
+                {
+                    string resolution = (v.Width > 0 && v.Height > 0)
+                        ? $"{v.Width}x{v.Height}"
+                        : "résolution inconnue";
+
+                    string fps = v.FPS > 0
+                        ? $"{v.FPS:0.###} fps"
+                        : "fps inconnu";
+
+                    string bitrate = v.Bitrate > 0
+                        ? $"{v.Bitrate} kbps"
+                        : "bitrate inconnu";
+
+                    log($"Video #{v.Index} : {v.Codec}  {resolution}  {fps}  {bitrate}");
+                }
+            }
 
             log("");
+
+            //
+            // --- AUDIO ---
+            //
             log("=== PISTES AUDIO ===");
             foreach (var a in analysis.AudioStreams)
                 log($"Audio #{a.Index} : {a.Codec}");
 
             log("");
-            log("=== SOUS-TITRES ===");
+
+            //
+            // --- SOUS-TITRES ---
+            //
+            log("=== SOUS TITRES ===");
             foreach (var s in analysis.SubtitleStreams)
                 log($"Sub #{s.Index} : {s.Codec}");
 
