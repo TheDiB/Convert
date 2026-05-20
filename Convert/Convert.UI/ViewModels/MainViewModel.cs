@@ -303,13 +303,28 @@ public class MainViewModel : ViewModelBase
                 JobResult.Error => "Error",
                 _ => "Unknown"
             };
+
+            // 🔥 Vérifier si tous les jobs sont terminés
+            bool allFinished = Jobs.All(j =>
+                j.Job.Status is "Done" or "Canceled" or "Failed" or "Error");
+
+            // 🔥 Vérifier s'il y a des erreurs
+            bool hasErrors = Jobs.Any(j =>
+                j.Job.Status is "Failed" or "Error");
+
+            if (allFinished)
+            {
+                if (hasErrors)
+                    Notify("Toutes les tâches sont terminées, des erreurs sont survenues");
+                else
+                    Notify("Toutes les tâches sont terminées !");
+            }
         }
         finally
         {
             _parallelLimiter.Release();
         }
     }
-
 
     private JobViewModel AddJobFromFile(string filePath)
     {
@@ -397,23 +412,6 @@ public class MainViewModel : ViewModelBase
 
         LoadAudioTracksFromSelectedJob();
         RefreshInputs();
-
-        //if (_settings.Settings.EnableReports)
-        //{
-        //    var entries = new List<AnalysisReportModel>();
-        //    if (jobVM.Job.Status != "Error")
-        //        entries.Add(jobVM.Job.Analysis.ToReportEntry());
-        //    else
-        //        entries.Add(new AnalysisReportModel
-        //        {
-        //            FilePath = jobVM.Job.InputPath,
-        //            FileName = Path.GetFileName(jobVM.Job.InputPath),
-        //            VideoCodec = "unknown",
-        //            AudioCodecs = "unknown",
-        //            FileSizeBytes = new FileInfo(jobVM.Job.InputPath).Length
-        //        });
-        //    FFmpeg.ExportReport(entries, "Convert_Unique_Analysis");
-        //}
     }
 
     private async Task TranscodeOneAsync(JobViewModel jobVM)
