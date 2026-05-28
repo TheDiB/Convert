@@ -22,6 +22,8 @@
 
         public bool AutoAnalyze { get; set; } = true;
 
+        public bool StartMaximized { get; set; } = true;
+
         public string FFmpegReleaseURL { get; set; } = "https://api.github.com/repos/BtbN/FFmpeg-Builds/releases/latest";
     }
 }

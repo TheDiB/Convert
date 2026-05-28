@@ -194,12 +194,13 @@ namespace Convert.Core
             //
             // --- SORTIE ---
             //
-            string output = System.IO.Path.ChangeExtension(
-                analysis.FilePath,
-                $"_reencoded.{options.OutputContainer}"
-            );
+            var dir = Path.GetDirectoryName(analysis.FilePath);
+            var name = Path.GetFileNameWithoutExtension(analysis.FilePath);
+            var ext = Path.GetExtension(analysis.FilePath);
+            var id = AppPaths.GenerateShortId();
+            string OutputPath = Path.Combine(dir, $"{name}_{id}{ext}");
 
-            sb.Append($"\"{output}\"");
+            sb.Append($"\"{OutputPath}\"");
 
             return sb.ToString();
         }

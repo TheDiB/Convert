@@ -84,18 +84,28 @@ namespace Convert.Core
                     token,
                     p => FFmpegProcess = p);
 
+                // 🔥 1) Annulation volontaire (Stop ONE ou Stop ALL)
+                if (this.Cts.IsCancellationRequested || isStopAllRequested())
+                {
+                    Status = "Canceled";
+                    return JobResult.Canceled;
+                }
+
+                // 🔥 2) Succès
                 if (code == 0)
                 {
                     Status = "Done";
                     return JobResult.Success;
                 }
 
-                if (isStopAllRequested() || this.Cts.IsCancellationRequested)
+                // 🔥 3) FFmpeg tué volontairement (code négatif)
+                if (code < 0)
                 {
                     Status = "Canceled";
                     return JobResult.Canceled;
                 }
 
+                // 🔥 4) Vraie erreur
                 Status = "Failed";
                 return JobResult.Failed;
             }
@@ -111,6 +121,19 @@ namespace Convert.Core
                 return JobResult.Error;
             }
         }
+
+        public void ResetForRetry()
+        {
+            Status = "Pending";
+            Progress = 0;
+            Mode = JobMode.Transcode;
+
+            // Reset du CTS
+            Cts.Cancel();
+            Cts.Dispose();
+            Cts = new CancellationTokenSource();
+        }
+
 
         private void ParseProgress(string line, double totalDuration)
         {

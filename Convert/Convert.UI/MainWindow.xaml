@@ -4,9 +4,17 @@
         xmlns:material="http://materialdesigninxaml.net/winfx/xaml/themes"
         xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
         xmlns:behaviors="clr-namespace:Convert.UI.Behaviors" 
+        xmlns:converters="clr-namespace:Convert.UI.Converters" 
         Icon="Assets/convert.ico"
         Style="{StaticResource MaterialDesignWindow}"
-        Title="{Binding AppVersion, Mode=OneTime}" Height="1200" Width="1200" ResizeMode="CanResizeWithGrip" Loaded="Window_Loaded">
+        Title="{Binding AppVersion, Mode=OneTime}" Height="1200" Width="1200" 
+        ResizeMode="CanResizeWithGrip"
+        WindowState="{Binding StartMaximized, Mode=OneTime}"
+        Loaded="Window_Loaded">
+    
+    <Window.Resources>
+        <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter" />
+    </Window.Resources>
 
     <Grid Margin="10">
         <Grid.RowDefinitions>
@@ -67,7 +75,8 @@
             </Button>
         </StackPanel>
 
-        <GroupBox Grid.Row="2" Header="Pistes détectées" Margin="0 10 0 10">
+        <GroupBox Grid.Row="2" Header="Pistes détectées" Margin="0 10 0 10"
+            Visibility="{Binding SelectedJob, Converter={StaticResource NullToVisibilityConverter}}">
             <TabControl SelectedIndex="0" Style="{StaticResource MaterialDesignTabControl}" SelectionChanged="TracksTabControl_SelectionChanged">
                 <!-- Onglet AUDIO -->
                 <TabItem>

@@ -40,6 +40,7 @@
             <!-- Apparence -->
             <TabItem Header="Apparence">
                 <StackPanel Margin="20">
+                    <CheckBox Content="Démarrer en plein écran" ToolTip="Agrandir la fenêtre de Convert au lancement" IsChecked="{Binding StartMaximized}"/>
 
                     <TextBlock Text="Thème" FontWeight="Bold"/>
                     <ComboBox ItemsSource="{Binding Themes}"

@@ -19,6 +19,13 @@
             var fileName = $"{baseName}_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}_{Guid.NewGuid():N}.csv";
             return Path.Combine(ReportsFolder, fileName);
         }
-    }
 
+        public static string GenerateShortId(int length = 10)
+        {
+            const string chars = "abcdefghijklmnopqrstuvwxyz0123456789";
+            var random = new Random();
+            return new string(Enumerable.Repeat(chars, length)
+                .Select(s => s[random.Next(s.Length)]).ToArray());
+        }
+    }
 }

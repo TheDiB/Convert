@@ -1,7 +1,7 @@
 ﻿using Convert.Core;
-using Convert.Models;
 using Convert.UI.Services;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Text;
 using System.Windows.Input;
 
@@ -18,13 +18,15 @@ namespace Convert.UI.ViewModels
         private readonly Func<JobViewModel, Task> _onAnalyze;
         private readonly Func<JobViewModel, Task> _onTranscode;
 
+        public bool CanRetry => Job.Status == "Error" || Job.Status == "Failed" || Job.Status == "Canceled";
+        public bool IsRunning => _job.Status == "Transcoding" || _job.Status == "Analyzing";
+
         public TranscodeJob Job => _job;
         public string FileName => System.IO.Path.GetFileName(_job.InputPath);
         public string Status => _job.Status;
         public double Progress => _job.Progress;
         public string Log => _log.ToString();
-
-        public bool IsRunning => _job.Status == "Transcoding" || _job.Status == "Analyzing";
+        public string TranscodeButtonLabel => CanRetry ? "Retry" : "Transcode";
 
         public ObservableCollection<AudioTrackViewModel> AudioTracks { get; } = new ObservableCollection<AudioTrackViewModel>();
         public ObservableCollection<VideoTrackViewModel> VideoTracks { get; } = new ObservableCollection<VideoTrackViewModel>();
@@ -53,6 +55,7 @@ namespace Convert.UI.ViewModels
             {
                 OnPropertyChanged(nameof(Status));
                 OnPropertyChanged(nameof(IsRunning));
+                OnPropertyChanged(nameof(CanRetry));
             };
 
             _job.ProgressChanged += () => OnPropertyChanged(nameof(Progress));

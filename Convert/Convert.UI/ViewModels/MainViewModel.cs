@@ -8,6 +8,7 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
+using System.Windows;
 using System.Windows.Input;
 
 using static Convert.Core.TranscodeJob;
@@ -35,6 +36,7 @@ public class MainViewModel : ViewModelBase
         = new SnackbarMessageQueue();
 
     public string AppVersion { get; private set; }
+    public WindowState StartMaximized { get; private set; }
 
     public string SelectedContainer { get; private set; }
     public string SelectedVideoCodec { get; private set; }
@@ -130,6 +132,7 @@ public class MainViewModel : ViewModelBase
         SelectedContainer = _settings.Settings.DefaultContainer;
         SelectedVideoCodec = _settings.Settings.DefaultVideoCodec;
         PreferredVideoEngine = _settings.Settings.PreferredVideoEngine;
+        StartMaximized = _settings.Settings.StartMaximized ? WindowState.Maximized : WindowState.Normal;
 
         _parallelLimiter = new SemaphoreSlim(_settings.Settings.MaxParallelJobs);
 
@@ -240,13 +243,29 @@ public class MainViewModel : ViewModelBase
 
     private async Task TranscodeAllAsync()
     {
+        StopAllRequested = false;
         var tasks = new List<Task>();
 
         foreach (var jobVM in Jobs)
+        {
+            switch (jobVM.Job.Status)
+            {
+                case "Error":
+                case "Failed":
+                case "Canceled":
+                    jobVM.Job.ResetForRetry();
+                    break;
+
+                case "Done":
+                    continue; // on ne touche pas aux jobs terminés
+            }
+
             tasks.Add(RunJobWithLimit(jobVM, JobMode.Transcode));
+        }
 
         await Task.WhenAll(tasks);
     }
+
 
     private async Task RunJobWithLimit(JobViewModel jobVM, JobMode mode)
     {
@@ -378,8 +397,8 @@ public class MainViewModel : ViewModelBase
         }
 
         Notify("Toutes les tâches ont été stoppées");
+        StopAllRequested = false;
         IsStoppingAll = false;
-
         _globalCts = new CancellationTokenSource();
     }
 
@@ -409,11 +428,20 @@ public class MainViewModel : ViewModelBase
 
     private async Task TranscodeOneAsync(JobViewModel jobVM)
     {
+        StopAllRequested = false;
+
+        // Si le job est en erreur → on le remet à zéro
+        if (jobVM.Job.Status == "Error" || jobVM.Job.Status == "Failed" || jobVM.Job.Status == "Canceled")
+        {
+            jobVM.Job.ResetForRetry();
+        }
+
         jobVM.Job.Status = "Queued";
+
         await RunJobWithLimit(jobVM, JobMode.Transcode);
-        jobVM.Job.Status = "Done";
         RefreshInputs();
     }
+
 
     private void LoadTracksFromSelectedJob()
     {
@@ -423,23 +451,21 @@ public class MainViewModel : ViewModelBase
         //
         // AUDIO
         //
-        var audioTracks = SelectedJob.AudioTracks;
-
         foreach (var audio in SelectedJob.Job.Analysis.AudioStreams)
         {
-            var existing = audioTracks.FirstOrDefault(t => t.Index == audio.Index);
+            var existing = SelectedJob.AudioTracks.FirstOrDefault(t => t.Index == audio.Index);
 
             if (existing == null)
             {
-                audioTracks.Add(new AudioTrackViewModel
+                SelectedJob.AudioTracks.Add(new AudioTrackViewModel
                 {
                     Index = audio.Index,
-                    Codec = AudioLanguageStreamInfo.CodecMap.ContainsKey(audio.Codec)
-                            ? AudioLanguageStreamInfo.CodecMap[audio.Codec]
+                    Codec = AudioLanguageStreamInfo.CodecMap.TryGetValue(audio.Codec, out var pretty)
+                            ? pretty
                             : audio.Codec,
                     Channels = audio.Channels,
-                    LanguageName = AudioLanguageStreamInfo.LanguageMap.ContainsKey(audio.Language)
-                            ? AudioLanguageStreamInfo.LanguageMap[audio.Language]
+                    LanguageName = AudioLanguageStreamInfo.LanguageMap.TryGetValue(audio.Language, out var lang)
+                            ? lang
                             : audio.Language,
                     Bitrate = audio.Bitrate,
                     Title = audio.Title
@@ -447,31 +473,32 @@ public class MainViewModel : ViewModelBase
             }
             else
             {
-                // mettre à jour les infos techniques sans toucher au SelectedProfile
-                existing.Codec = audio.Codec;
+                // On met à jour les infos techniques
                 existing.Channels = audio.Channels;
-                existing.LanguageName = audio.Language;
+                existing.LanguageName = AudioLanguageStreamInfo.LanguageMap.TryGetValue(audio.Language, out var lang)
+                            ? lang
+                            : audio.Language;
                 existing.Bitrate = audio.Bitrate;
                 existing.Title = audio.Title;
+
+                // MAIS ON NE TOUCHE PAS À existing.Codec
             }
         }
 
         //
         // VIDEO
         //
-        var videoTracks = SelectedJob.VideoTracks;
-
         foreach (var video in SelectedJob.Job.Analysis.VideoStreams)
         {
-            var existing = videoTracks.FirstOrDefault(t => t.Index == video.Index);
+            var existing = SelectedJob.VideoTracks.FirstOrDefault(t => t.Index == video.Index);
 
             if (existing == null)
             {
-                videoTracks.Add(new VideoTrackViewModel
+                SelectedJob.VideoTracks.Add(new VideoTrackViewModel
                 {
                     Index = video.Index,
-                    Codec = VideoLanguageStreamInfo.CodecMap.ContainsKey(video.Codec)
-                            ? VideoLanguageStreamInfo.CodecMap[video.Codec]
+                    Codec = VideoLanguageStreamInfo.CodecMap.TryGetValue(video.Codec, out var pretty)
+                            ? pretty
                             : video.Codec,
                     Width = video.Width,
                     Height = video.Height,
@@ -481,11 +508,12 @@ public class MainViewModel : ViewModelBase
             }
             else
             {
-                existing.Codec = video.Codec;
                 existing.Width = video.Width;
                 existing.Height = video.Height;
                 existing.FPS = video.FPS;
                 existing.Bitrate = video.Bitrate;
+
+                // NE PAS toucher à existing.Codec
             }
         }
     }
