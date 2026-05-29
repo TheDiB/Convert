@@ -34,6 +34,7 @@
                 <StackPanel Margin="20">
                     <CheckBox Content="Génération des rapports" ToolTip="Activer la génération des rapports d'analyse dans le dossier 'Mes Documents\Convert\Reports'" IsChecked="{Binding EnableReports}"/>
                     <CheckBox Content="Analyse automatique des fichiers" ToolTip="Analyser automatique les fichiers dès leur ajout à la liste" IsChecked="{Binding AutoAnalyze}"/>
+                    <CheckBox Content="Activer les notifications Windows" ToolTip="Permettre à Convert de diffuser des notifications dans le Centre de Notifications de Windows" IsChecked="{Binding EnableWindowsNotifications}"/>
                 </StackPanel>
             </TabItem>
 

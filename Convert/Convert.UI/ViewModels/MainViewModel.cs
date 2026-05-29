@@ -1,5 +1,6 @@
 ﻿using Convert.Core;
 using Convert.Models;
+using Convert.UI.Models;
 using Convert.UI.Services;
 using Convert.UI.ViewModels;
 using MaterialDesignThemes.Wpf;
@@ -127,7 +128,7 @@ public class MainViewModel : ViewModelBase
         FFmpeg = ffmpeg;
 
         var version = FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location);
-        AppVersion = string.Concat("Convert v", version.FileMajorPart, '.', version.FileMinorPart);
+        AppVersion = string.Concat("Convert v", version.FileMajorPart, '.', version.FileMinorPart, '.', version.FileBuildPart);
 
         SelectedContainer = _settings.Settings.DefaultContainer;
         SelectedVideoCodec = _settings.Settings.DefaultVideoCodec;
@@ -171,7 +172,7 @@ public class MainViewModel : ViewModelBase
         if (dialog.ShowDialog() == true)
         {
             var vm = AddJobFromFile(dialog.FileName);
-            Notify($"Fichier ajouté avec succès");
+            Notify($"Fichier ajouté avec succès", NotificationLevel.Info);
 
             if (_settings.Settings.AutoAnalyze)
             {
@@ -209,13 +210,17 @@ public class MainViewModel : ViewModelBase
             }
 
             if (files.Count() > 0)
-                Notify($"{files.Count()} fichier(s) ajouté(s) avec succès");
+                Notify($"{files.Count()} fichier(s) ajouté(s) avec succès", NotificationLevel.Info);
         }
     }
 
-    public void Notify(string message)
+    public void Notify(string message, NotificationLevel level)
     {
         SnackbarMessageQueue.Enqueue(message);
+
+        if (_settings.Settings.EnableWindowsNotifications && (level == NotificationLevel.Warning
+            || level == NotificationLevel.Error || level == NotificationLevel.Critical || level == NotificationLevel.Success))
+            WindowsNotificationService.Show(message);
     }
 
     private async Task AnalyzeAllAsync()
@@ -323,10 +328,14 @@ public class MainViewModel : ViewModelBase
             if (allFinished)
             {
                 if (hasErrors)
-                    Notify("Toutes les tâches sont terminées, des erreurs sont survenues");
+                    Notify("Toutes les tâches sont terminées, des erreurs sont survenues", NotificationLevel.Warning);
                 else
-                    Notify("Toutes les tâches sont terminées !");
+                    Notify("Toutes les tâches sont terminées !", NotificationLevel.Success);
             }
+        }
+        catch (Exception)
+        {
+            Notify("Une erreur est survenue !", NotificationLevel.Error);
         }
         finally
         {
@@ -369,7 +378,7 @@ public class MainViewModel : ViewModelBase
         }
 
         SelectedJob = null;
-        Notify($"Liste d'attente effacée");
+        Notify($"Liste d'attente effacée", NotificationLevel.Info);
     }
 
     private void StopAll()
@@ -396,7 +405,7 @@ public class MainViewModel : ViewModelBase
             }
         }
 
-        Notify("Toutes les tâches ont été stoppées");
+        Notify("Toutes les tâches ont été stoppées", NotificationLevel.Info);
         StopAllRequested = false;
         IsStoppingAll = false;
         _globalCts = new CancellationTokenSource();

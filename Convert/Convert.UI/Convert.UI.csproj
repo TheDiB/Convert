@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net10.0-windows</TargetFramework>
+    <TargetFramework>net10.0-windows10.0.22621.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
@@ -11,6 +11,8 @@
     <BaseOutputPath>..\..\bin</BaseOutputPath>
     <StartupObject>Convert.UI.App</StartupObject>
     <ApplicationIcon>Assets\convert.ico</ApplicationIcon>
+    <SupportedOSPlatformVersion>10.0.22621.0</SupportedOSPlatformVersion>
+    <AssemblyName>Convert</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>
@@ -26,12 +28,15 @@
 
   <ItemGroup>
     <Folder Include="ffmpeg\" />
-    <Folder Include="Models\" />
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="CommunityToolkit.WinUI.Notifications" Version="7.1.2" />
     <PackageReference Include="MaterialDesignColors" Version="5.3.2" />
     <PackageReference Include="MaterialDesignThemes" Version="5.3.2" />
+    <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.1.3" />
+    <PackageReference Include="Microsoft.WindowsAppSDK.Foundation" Version="2.0.21" />
+    <PackageReference Include="Microsoft.WindowsAppSDK.WinUI" Version="2.1.0" />
   </ItemGroup>
 
   <ItemGroup>

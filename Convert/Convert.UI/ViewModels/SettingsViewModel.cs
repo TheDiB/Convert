@@ -65,6 +65,7 @@ namespace Convert.UI.ViewModels
         public bool EnableReports { get; set; }
         public bool AutoAnalyze { get; set; }
         public bool StartMaximized { get; set; }
+        public bool EnableWindowsNotifications { get; set; }
 
         public SettingsViewModel(SettingsService service)
         {
@@ -88,6 +89,7 @@ namespace Convert.UI.ViewModels
             EnableReports = _service.Settings.EnableReports;
             AutoAnalyze = _service.Settings.AutoAnalyze;
             StartMaximized = _service.Settings.StartMaximized;
+            EnableWindowsNotifications = _service.Settings.EnableWindowsNotifications;
 
             FfmpegReleaseURL = _service.Settings.FFmpegReleaseURL;
 
@@ -118,6 +120,7 @@ namespace Convert.UI.ViewModels
             _service.Settings.EnableReports = EnableReports;
             _service.Settings.AutoAnalyze = AutoAnalyze;
             _service.Settings.StartMaximized = StartMaximized;
+            _service.Settings.EnableWindowsNotifications = EnableWindowsNotifications;
 
             _service.Settings.FFmpegReleaseURL = FfmpegReleaseURL;
 

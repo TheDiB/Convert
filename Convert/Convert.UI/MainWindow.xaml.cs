@@ -59,7 +59,7 @@ namespace Convert.UI
                     // Toujours sur le thread UI
                     Dispatcher.Invoke(() =>
                     {
-                        vm.Notify("FFmpeg a été mis à jour avec succès !");
+                        vm.Notify("FFmpeg a été mis à jour avec succès !", Models.NotificationLevel.Success);
                     });
                 };
             }

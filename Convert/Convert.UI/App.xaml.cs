@@ -28,7 +28,7 @@ namespace Convert.UI
                     mainVM.IsFFmpegDownloading = false;
                     Dispatcher.Invoke(() =>
                     {
-                        mainVM.Notify("FFmpeg a été mis à jour avec succès !");
+                        mainVM.Notify("FFmpeg a été mis à jour avec succès !", Models.NotificationLevel.Success);
                     });
                 };
 
