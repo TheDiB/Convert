@@ -132,7 +132,31 @@ namespace Convert.Core
                     // --- SOUS-TITRES ---
                     //
                     if (type == "subtitle")
-                        result.SubtitleStreams.Add(new SubtitleStreamInfo { Index = index, Codec = codec });
+                    {
+                        var subtitles = new SubtitleStreamInfo();
+
+                        subtitles.Index = index;
+                        subtitles.Codec = codec;
+
+                        // --- TAGS (language, title) ---
+                        if (stream.TryGetProperty("tags", out var tagsProp))
+                        {
+                            subtitles.Language = tagsProp.TryGetProperty("language", out var langProp)
+                                ? langProp.GetString() ?? "und"
+                                : "und";
+
+                            subtitles.Title = tagsProp.TryGetProperty("title", out var titleProp)
+                                ? FixEncoding(titleProp.GetString()) ?? ""
+                                : "";
+                        }
+                        else
+                        {
+                            subtitles.Language = "und";
+                            subtitles.Title = "";
+                        }
+
+                        result.SubtitleStreams.Add(subtitles);
+                    }
 
                     //
                     // --- VIDÉO ---

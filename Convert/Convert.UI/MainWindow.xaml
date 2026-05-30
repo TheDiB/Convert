@@ -11,9 +11,11 @@
         ResizeMode="CanResizeWithGrip"
         WindowState="{Binding StartMaximized, Mode=OneTime}"
         Loaded="Window_Loaded">
-    
+
     <Window.Resources>
         <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter" />
+        <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
+        <converters:InverseBoolConverter x:Key="InverseBoolConverter" />
     </Window.Resources>
 
     <Grid Margin="10">
@@ -137,7 +139,7 @@
                     </DataGrid>
                 </TabItem>
 
-                <!-- Onglet VIDEO (à venir) -->
+                <!-- Onglet VIDEO -->
                 <TabItem>
                     <TabItem.Header>
                         <StackPanel Orientation="Horizontal">
@@ -191,13 +193,57 @@
                     <TabItem.Header>
                         <StackPanel Orientation="Horizontal">
                             <material:PackIcon Kind="Subtitles" Margin="0 0 5 0"/>
-                            <TextBlock Text="Sous-titres"/>
+                            <TextBlock Text="{Binding SelectedJob.Job.Analysis.SubtitleStreams.Count, StringFormat='Sous-Titres ({0})', FallbackValue='Sous-Titres'}"/>
                         </StackPanel>
                     </TabItem.Header>
-                    <TextBlock Text="À venir..." 
-                   HorizontalAlignment="Center" 
-                   VerticalAlignment="Center"
-                   Foreground="Gray"/>
+
+                    <DataGrid ItemsSource="{Binding SelectedJob.SubtitleTracks}"
+                          AutoGenerateColumns="False"
+                          CanUserAddRows="False"
+                          CanUserDeleteRows="False"
+                          IsReadOnly="False">
+
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="N°" Binding="{Binding Index}" Width="50"/>
+                            <DataGridTextColumn Header="Codec" Binding="{Binding Codec}" Width="250"/>
+                            <DataGridTextColumn Header="Langue" Binding="{Binding LanguageName}" Width="120"/>
+                            <DataGridTextColumn Header="Titre" Binding="{Binding Title}" Width="350"/>
+
+                            <DataGridTemplateColumn Header="Action" Width="300">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <ComboBox ItemsSource="{Binding AvailableProfiles}"
+                                            SelectedValue="{Binding SelectedProfile, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                            IsEnabled="{Binding IsBitmap, Converter={StaticResource InverseBoolConverter}}"
+                                            SelectedValuePath="Profile"
+                                            DisplayMemberPath="Label"
+                                            Style="{StaticResource MaterialDesignOutlinedComboBox}"/>
+
+                                            <material:PackIcon Kind="Warning" Margin="0 0 5 0" ToolTip="Cette piste est un sous-titre bitmap (PGS/VobSub). La conversion en SRT n'est pas encore supportée." 
+                                                               Visibility="{Binding IsBitmap, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+
+                                <DataGridTemplateColumn.CellEditingTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <ComboBox ItemsSource="{Binding AvailableProfiles}"
+                                            SelectedValue="{Binding SelectedProfile, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                            IsEnabled="{Binding IsBitmap, Converter={StaticResource InverseBoolConverter}}"
+                                            SelectedValuePath="Profile"
+                                            DisplayMemberPath="Label"
+                                            Style="{StaticResource MaterialDesignOutlinedComboBox}"/>
+
+                                            <material:PackIcon Kind="Warning" Margin="0 0 5 0" ToolTip="Cette piste est un sous-titre bitmap (PGS/VobSub). La conversion en SRT n'est pas encore supportée." 
+                                                               Visibility="{Binding IsBitmap, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellEditingTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
                 </TabItem>
             </TabControl>
         </GroupBox>

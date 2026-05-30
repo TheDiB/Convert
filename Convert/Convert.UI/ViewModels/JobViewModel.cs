@@ -30,6 +30,7 @@ namespace Convert.UI.ViewModels
 
         public ObservableCollection<AudioTrackViewModel> AudioTracks { get; } = new ObservableCollection<AudioTrackViewModel>();
         public ObservableCollection<VideoTrackViewModel> VideoTracks { get; } = new ObservableCollection<VideoTrackViewModel>();
+        public ObservableCollection<SubtitleTrackViewModel> SubtitleTracks { get; } = new ObservableCollection<SubtitleTrackViewModel>();
 
         public ICommand StopCommand { get; }
         public ICommand DeleteCommand { get; }

@@ -300,6 +300,10 @@ public class MainViewModel : ViewModelBase
             foreach (var track in jobVM.VideoTracks)
                 Options.VideoTrackProfiles[track.Index] = track.SelectedProfile;
 
+            Options.SubtitleTrackProfiles.Clear();
+            foreach (var track in jobVM.SubtitleTracks)
+                Options.SubtitleTrackProfiles[track.Index] = track.SelectedProfile;
+
             var result = await jobVM.Job.RunAsync(
                 _probe,
                 _engine,
@@ -423,6 +427,10 @@ public class MainViewModel : ViewModelBase
         foreach (var track in jobVM.VideoTracks)
             Options.VideoTrackProfiles[track.Index] = track.SelectedProfile;
 
+        Options.SubtitleTrackProfiles.Clear();
+        foreach (var track in jobVM.SubtitleTracks)
+            Options.SubtitleTrackProfiles[track.Index] = track.SelectedProfile;
+
         await jobVM.Job.RunAsync(
             _probe,
             _engine,
@@ -523,6 +531,53 @@ public class MainViewModel : ViewModelBase
                 existing.Bitrate = video.Bitrate;
 
                 // NE PAS toucher à existing.Codec
+            }
+        }
+
+        //
+        // SOUS-TITRES
+        //
+        foreach (var sub in SelectedJob.Job.Analysis.SubtitleStreams)
+        {
+            var existing = SelectedJob.SubtitleTracks.FirstOrDefault(t => t.Index == sub.Index);
+
+            if (existing == null)
+            {
+                var vm = new SubtitleTrackViewModel
+                {
+                    Index = sub.Index,
+                    RawCodec = sub.Codec,
+                    Codec = SubtitleStreamInfo.CodecMap.TryGetValue(sub.Codec, out var pretty)
+                            ? pretty
+                            : sub.Codec,
+                    LanguageName = SubtitleStreamInfo.LanguageMap.TryGetValue(sub.Language, out var lang)
+                            ? lang
+                            : sub.Language,
+                    Title = sub.Title
+                };
+
+                //
+                // 🔥 Si c’est un sous-titre bitmap → forcer Copy
+                //
+                if (vm.IsBitmap)
+                    vm.SelectedProfile = SubtitleProfile.Copy;
+
+                SelectedJob.SubtitleTracks.Add(vm);
+            }
+            else
+            {
+                // Mise à jour des infos techniques
+                existing.RawCodec = sub.Codec;
+                existing.LanguageName = SubtitleStreamInfo.LanguageMap.TryGetValue(sub.Language, out var lang)
+                            ? lang
+                            : sub.Language;
+                existing.Title = sub.Title;
+
+                //
+                // 🔥 Si c’est un bitmap, on force Copy même si l’utilisateur avait changé
+                //
+                if (existing.IsBitmap && existing.SelectedProfile != SubtitleProfile.Copy)
+                    existing.SelectedProfile = SubtitleProfile.Copy;
             }
         }
     }

@@ -72,8 +72,36 @@ namespace Convert.Core
             //
             // --- SOUS-TITRES ---
             //
-            sb.Append("-map 0:s? ");
-            sb.Append("-c:s copy ");
+            int subtitleIndex = 0;
+            foreach (var sub in analysis.SubtitleStreams)
+            {
+                // Récupération du profil choisi par l'utilisateur
+                if (!options.SubtitleTrackProfiles.TryGetValue(sub.Index, out var profile))
+                    profile = SubtitleProfile.Copy; // fallback par défaut
+
+                switch (profile)
+                {
+                    case SubtitleProfile.Ignore:
+                        // On ne mappe pas cette piste
+                        continue;
+
+                    case SubtitleProfile.Copy:
+                        sb.Append($"-map 0:{sub.Index} ");
+                        sb.Append($"-c:s:{subtitleIndex} copy ");
+                        break;
+
+                    case SubtitleProfile.ConvertToSrt:
+                        sb.Append($"-map 0:{sub.Index} ");
+                        sb.Append($"-c:s:{subtitleIndex} srt ");
+                        break;
+
+                    default:
+                        // Pour l'instant, on ignore Extract (géré plus tard)
+                        continue;
+                }
+
+                subtitleIndex++;
+            }
 
             //
             // --- AUDIO ---
