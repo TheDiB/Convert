@@ -134,7 +134,6 @@ namespace Convert.Core
             Cts = new CancellationTokenSource();
         }
 
-
         private void ParseProgress(string line, double totalDuration)
         {
             if (!line.Contains("time="))

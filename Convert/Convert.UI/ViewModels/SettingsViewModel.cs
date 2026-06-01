@@ -18,9 +18,7 @@ namespace Convert.UI.ViewModels
             "Green", "LightGreen", "Lime", "Yellow",
             "Amber", "Orange", "DeepOrange", "Brown", "Grey", "BlueGrey"
         };
-        public ObservableCollection<string> Containers { get; } = new ObservableCollection<string> { "mkv", "mp4", "mov" };
-        public ObservableCollection<string> VideoCodecs { get; } = new ObservableCollection<string> { "copy", "h264", "hevc" };
-        public ObservableCollection<string> VideoEngines { get; } = new ObservableCollection<string> { "CPU", "NVENC", "QSV", "AMF" };
+        public ObservableCollection<string> Containers { get; } = new ObservableCollection<string> { "MKV", "MP4", "MOV" };
 
         // --- Propriétés bindables ---
         private string _theme;
@@ -37,23 +35,15 @@ namespace Convert.UI.ViewModels
             set { _primaryColor = value; OnPropertyChanged(nameof(PrimaryColor)); }
         }
 
-        private string _defaultContainer;
-        public string DefaultContainer
+        private string _container;
+        public string Container
         {
-            get => _defaultContainer;
-            set { _defaultContainer = value; OnPropertyChanged(nameof(DefaultContainer)); }
-        }
-
-        private string _defaultVideoCodec;
-        public string DefaultVideoCodec
-        {
-            get => _defaultVideoCodec;
-            set { _defaultVideoCodec = value; OnPropertyChanged(nameof(DefaultVideoCodec)); }
+            get => _container;
+            set { _container = value; OnPropertyChanged(nameof(Container)); }
         }
 
         public int MaxParallelJobs { get; set; }
 
-        public string PreferredVideoEngine { get; set; }
         public string SupportedFileTypes { get; set; }
 
         public string FfmpegPath { get; set; }
@@ -74,12 +64,9 @@ namespace Convert.UI.ViewModels
             // Charger les valeurs dans le VM
             Theme = _service.Settings.Theme;
             PrimaryColor = _service.Settings.PrimaryColor;
-            DefaultContainer = _service.Settings.DefaultContainer;
-            DefaultVideoCodec = _service.Settings.DefaultVideoCodec;
+            Container = _service.Settings.Container;
 
             MaxParallelJobs = _service.Settings.MaxParallelJobs;
-
-            PreferredVideoEngine = _service.Settings.PreferredVideoEngine;
             SupportedFileTypes = _service.Settings.SupportedFileTypes;
 
             FfmpegPath = _service.Settings.FfmpegPath;
@@ -104,13 +91,9 @@ namespace Convert.UI.ViewModels
         {
             _service.Settings.Theme = Theme;
             _service.Settings.PrimaryColor = PrimaryColor;
-
-            _service.Settings.DefaultContainer = DefaultContainer;
-            _service.Settings.DefaultVideoCodec = DefaultVideoCodec;
+            _service.Settings.Container = Container;
 
             _service.Settings.MaxParallelJobs = MaxParallelJobs;
-
-            _service.Settings.PreferredVideoEngine = PreferredVideoEngine;
             _service.Settings.SupportedFileTypes = SupportedFileTypes;
 
             _service.Settings.FfmpegPath = FfmpegPath;

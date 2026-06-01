@@ -7,12 +7,9 @@
 
         public string SupportedFileTypes { get; set; } = "mkv,mp4,mov,avi,ts,webm";
 
-        public string DefaultContainer { get; set; } = "mkv";
-        public string DefaultVideoCodec { get; set; } = "copy";
+        public string Container { get; set; } = "mkv";
 
         public int MaxParallelJobs { get; set; } = 2;
-
-        public string PreferredVideoEngine { get; set; } = "CPU";
 
         public string FfmpegPath { get; set; } = "";
         public string FfprobePath { get; set; } = "";

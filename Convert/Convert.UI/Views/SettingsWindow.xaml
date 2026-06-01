@@ -58,8 +58,10 @@
             <!-- Conversion -->
             <TabItem Header="Conversion">
                 <StackPanel Margin="20">
-                    <!--<TextBlock Text="Formats pris en charge" FontWeight="Bold"/>
-                    <TextBox Text="{Binding SupportedFileTypes}"/>-->
+                    <TextBlock Text="Conteneur" FontWeight="Bold"/>
+                    <ComboBox ItemsSource="{Binding Containers}"
+                        SelectedItem="{Binding Container}"
+                        material:HintAssist.Hint="Conteneur"/>
 
                     <TextBlock Text="Nombre de process simultanés" ToolTip="Nombre de threads FFpmeg simultanés lancés au maximum" FontWeight="Bold"/>
                     <Slider Minimum="1" Maximum="8"

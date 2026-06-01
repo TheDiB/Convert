@@ -1,7 +1,6 @@
 ﻿using Convert.Core;
 using Convert.UI.Services;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
 using System.Text;
 using System.Windows.Input;
 

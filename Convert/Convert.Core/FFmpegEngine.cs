@@ -17,8 +17,9 @@ namespace Convert.Core
         {
             var sb = new StringBuilder();
 
-            sb.Append($"-i \"{analysis.FilePath}\" ");
+            sb.Append($"-i \"{analysis.FilePath}\" -strict -2 ");
 
+            #region VIDEO
             //
             // --- VIDÉO ---
             //
@@ -68,7 +69,9 @@ namespace Convert.Core
             {
                 sb.Append("-vn ");
             }
+            #endregion
 
+            #region SOUS-TITRES
             //
             // --- SOUS-TITRES ---
             //
@@ -102,7 +105,9 @@ namespace Convert.Core
 
                 subtitleIndex++;
             }
+            #endregion
 
+            #region AUDIO
             //
             // --- AUDIO ---
             //
@@ -129,6 +134,7 @@ namespace Convert.Core
                 // Détection codecs source
                 bool isEac3 = audio.Codec.Equals("eac3", StringComparison.OrdinalIgnoreCase);
                 bool isAc3 = audio.Codec.Equals("ac3", StringComparison.OrdinalIgnoreCase);
+                bool isDts = audio.Codec.Equals("dts", StringComparison.OrdinalIgnoreCase);
                 bool isDtsX =
                     (audio.Profile?.Contains("X", StringComparison.OrdinalIgnoreCase) ?? false) ||
                     (audio.CodecTagString?.Contains("DTSX", StringComparison.OrdinalIgnoreCase) ?? false);
@@ -199,6 +205,21 @@ namespace Convert.Core
                         }
                         break;
 
+                    case AudioProfile.Dts_5_1:
+                        if (!isDts)
+                        {
+                            sb.Append($"-c:a:{outAudioIndex} dts ");
+                            sb.Append($"-b:a:{outAudioIndex} 384k ");
+                            sb.Append($"-ac:{outAudioIndex} 6 ");
+                            sb.Append($"-channel_layout:{outAudioIndex} 5.1 ");
+                            sb.Append($"-metadata:s:a:{outAudioIndex} title=\"{langName} DTS 5.1\" ");
+                        }
+                        else
+                        {
+                            sb.Append($"-c:a:{outAudioIndex} copy ");
+                        }
+                        break;
+
                     case AudioProfile.Ac3_2_0:
                         sb.Append($"-c:a:{outAudioIndex} ac3 ");
                         sb.Append($"-b:a:{outAudioIndex} 192k ");
@@ -209,22 +230,31 @@ namespace Convert.Core
 
                     case AudioProfile.Mp3_2_0:
                         sb.Append($"-c:a:{outAudioIndex} mp3 ");
-                        sb.Append($"-b:a:{outAudioIndex} 320k ");
+                        sb.Append($"-b:a:{outAudioIndex} 192k ");
                         sb.Append($"-ac:{outAudioIndex} 2 ");
                         sb.Append($"-channel_layout:{outAudioIndex} stereo ");
                         sb.Append($"-metadata:s:a:{outAudioIndex} title=\"{langName} MP3 2.0\" ");
+                        break;
+
+                    case AudioProfile.Aac_2_0:
+                        sb.Append($"-c:a:{outAudioIndex} aac ");
+                        sb.Append($"-b:a:{outAudioIndex} 320k ");
+                        sb.Append($"-ac:{outAudioIndex} 2 ");
+                        sb.Append($"-channel_layout:{outAudioIndex} stereo ");
+                        sb.Append($"-metadata:s:a:{outAudioIndex} title=\"{langName} AAC 2.0\" ");
                         break;
                 }
 
                 outAudioIndex++;
             }
+            #endregion
 
             //
             // --- SORTIE ---
             //
             var dir = Path.GetDirectoryName(analysis.FilePath);
             var name = Path.GetFileNameWithoutExtension(analysis.FilePath);
-            var ext = Path.GetExtension(analysis.FilePath);
+            var ext = !string.IsNullOrEmpty(options.Container) ? '.' + options.Container.ToLower() : Path.GetExtension(analysis.FilePath);
             var id = AppPaths.GenerateShortId();
             string OutputPath = Path.Combine(dir, $"{name}_{id}{ext}");
 

@@ -10,14 +10,5 @@ namespace Convert.UI.ViewModels
         {
             Options = options;
         }
-
-        public IEnumerable<string> Containers => new[] { "mkv", "mp4" };
-
-        public IEnumerable<string> VideoCodecs => new[]
-        {
-            "copy",
-            "h264",
-            "hevc"
-        };
     }
 }

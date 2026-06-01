@@ -39,10 +39,6 @@ public class MainViewModel : ViewModelBase
     public string AppVersion { get; private set; }
     public WindowState StartMaximized { get; private set; }
 
-    public string SelectedContainer { get; private set; }
-    public string SelectedVideoCodec { get; private set; }
-    public string PreferredVideoEngine { get; private set; }
-
     private bool _isFFmpegChecking;
     public bool IsFFmpegChecking
     {
@@ -130,14 +126,11 @@ public class MainViewModel : ViewModelBase
         var version = FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location);
         AppVersion = string.Concat("Convert v", version.FileMajorPart, '.', version.FileMinorPart, '.', version.FileBuildPart);
 
-        SelectedContainer = _settings.Settings.DefaultContainer;
-        SelectedVideoCodec = _settings.Settings.DefaultVideoCodec;
-        PreferredVideoEngine = _settings.Settings.PreferredVideoEngine;
         StartMaximized = _settings.Settings.StartMaximized ? WindowState.Maximized : WindowState.Normal;
-
         _parallelLimiter = new SemaphoreSlim(_settings.Settings.MaxParallelJobs);
 
         OptionsVM = new OptionsViewModel(Options);
+        OptionsVM.Options.Container = _settings.Settings.Container;
         Jobs = new ObservableCollection<JobViewModel>();
 
         var ffmpegPath = Path.Combine(AppContext.BaseDirectory, "ffmpeg", "ffmpeg.exe");
@@ -157,9 +150,7 @@ public class MainViewModel : ViewModelBase
 
     public void ReloadSettings()
     {
-        SelectedContainer = _settings.Settings.DefaultContainer;
-        SelectedVideoCodec = _settings.Settings.DefaultVideoCodec;
-        PreferredVideoEngine = _settings.Settings.PreferredVideoEngine;
+        OptionsVM.Options.Container = _settings.Settings.Container;
     }
 
     private async Task AddFileAsync()
@@ -459,7 +450,6 @@ public class MainViewModel : ViewModelBase
         RefreshInputs();
     }
 
-
     private void LoadTracksFromSelectedJob()
     {
         if (SelectedJob?.Job?.Analysis == null)
@@ -581,7 +571,6 @@ public class MainViewModel : ViewModelBase
             }
         }
     }
-
 
     private void RefreshInputs()
     {
