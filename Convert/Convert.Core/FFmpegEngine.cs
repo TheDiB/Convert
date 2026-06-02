@@ -17,7 +17,7 @@ namespace Convert.Core
         {
             var sb = new StringBuilder();
 
-            sb.Append($"-i \"{analysis.FilePath}\" -strict -2 ");
+            sb.Append($"-i \"{analysis.FilePath}\" ");
 
             #region VIDEO
             //
@@ -175,13 +175,26 @@ namespace Convert.Core
                         sb.Append($"-c:a:{outAudioIndex} copy ");
                         break;
 
+                    case AudioProfile.Aac_7_1:
+                        {
+                            sb.Append($"-c:a:{outAudioIndex} aac ");
+                            sb.Append($"-b:a:{outAudioIndex} 896k ");
+                            sb.Append($"-ac:{outAudioIndex} 8 ");
+                            sb.Append($"-channel_layout:{outAudioIndex} 7.1 ");
+                            sb.Append($"-filter:a:{outAudioIndex} \"pan=7.1\" ");
+                            WriteStatisticsTags(sb, outAudioIndex, 896, analysis.DurationSeconds);
+                            sb.Append($"-metadata:s:a:{outAudioIndex} title=\"{langName} AAC 7.1\" ");
+                            break;
+                        }
+
                     case AudioProfile.Eac3_5_1:
                         if (!isEac3)
                         {
                             sb.Append($"-c:a:{outAudioIndex} eac3 ");
-                            sb.Append($"-b:a:{outAudioIndex} 640k ");
+                            sb.Append($"-b:a:{outAudioIndex} 1536k ");
                             sb.Append($"-ac:{outAudioIndex} 6 ");
                             sb.Append($"-channel_layout:{outAudioIndex} 5.1 ");
+                            WriteStatisticsTags(sb, outAudioIndex, 1536, analysis.DurationSeconds);
                             sb.Append($"-metadata:s:a:{outAudioIndex} title=\"{langName} EAC3 5.1\" ");
                         }
                         else
@@ -197,6 +210,7 @@ namespace Convert.Core
                             sb.Append($"-b:a:{outAudioIndex} 640k ");
                             sb.Append($"-ac:{outAudioIndex} 6 ");
                             sb.Append($"-channel_layout:{outAudioIndex} 5.1 ");
+                            WriteStatisticsTags(sb, outAudioIndex, 640, analysis.DurationSeconds);
                             sb.Append($"-metadata:s:a:{outAudioIndex} title=\"{langName} AC3 5.1\" ");
                         }
                         else
@@ -205,26 +219,26 @@ namespace Convert.Core
                         }
                         break;
 
-                    case AudioProfile.Dts_5_1:
-                        if (!isDts)
+                    case AudioProfile.Aac_5_1:
                         {
-                            sb.Append($"-c:a:{outAudioIndex} dts ");
-                            sb.Append($"-b:a:{outAudioIndex} 384k ");
+                            sb.Append($"-c:a:{outAudioIndex} aac ");
+                            sb.Append($"-b:a:{outAudioIndex} 512k ");
                             sb.Append($"-ac:{outAudioIndex} 6 ");
                             sb.Append($"-channel_layout:{outAudioIndex} 5.1 ");
-                            sb.Append($"-metadata:s:a:{outAudioIndex} title=\"{langName} DTS 5.1\" ");
+                            sb.Append($"-filter:a:{outAudioIndex} \"pan=5.1\" ");
+                            WriteStatisticsTags(sb, outAudioIndex, 512, analysis.DurationSeconds);
+                            sb.Append($"-metadata:s:a:{outAudioIndex} title=\"{langName} AAC 5.1\" ");
+                            break;
                         }
-                        else
-                        {
-                            sb.Append($"-c:a:{outAudioIndex} copy ");
-                        }
-                        break;
+
 
                     case AudioProfile.Ac3_2_0:
                         sb.Append($"-c:a:{outAudioIndex} ac3 ");
                         sb.Append($"-b:a:{outAudioIndex} 192k ");
                         sb.Append($"-ac:{outAudioIndex} 2 ");
                         sb.Append($"-channel_layout:{outAudioIndex} stereo ");
+                        sb.Append($"-af:a:{outAudioIndex} pan=stereo ");
+                        WriteStatisticsTags(sb, outAudioIndex, 192, analysis.DurationSeconds);
                         sb.Append($"-metadata:s:a:{outAudioIndex} title=\"{langName} AC3 2.0\" ");
                         break;
 
@@ -233,6 +247,7 @@ namespace Convert.Core
                         sb.Append($"-b:a:{outAudioIndex} 192k ");
                         sb.Append($"-ac:{outAudioIndex} 2 ");
                         sb.Append($"-channel_layout:{outAudioIndex} stereo ");
+                        WriteStatisticsTags(sb, outAudioIndex, 192, analysis.DurationSeconds);
                         sb.Append($"-metadata:s:a:{outAudioIndex} title=\"{langName} MP3 2.0\" ");
                         break;
 
@@ -240,7 +255,8 @@ namespace Convert.Core
                         sb.Append($"-c:a:{outAudioIndex} aac ");
                         sb.Append($"-b:a:{outAudioIndex} 320k ");
                         sb.Append($"-ac:{outAudioIndex} 2 ");
-                        sb.Append($"-channel_layout:{outAudioIndex} stereo ");
+                        sb.Append($"-af:a:{outAudioIndex} pan=stereo ");
+                        WriteStatisticsTags(sb, outAudioIndex, 320, analysis.DurationSeconds);
                         sb.Append($"-metadata:s:a:{outAudioIndex} title=\"{langName} AAC 2.0\" ");
                         break;
                 }
@@ -259,7 +275,6 @@ namespace Convert.Core
             string OutputPath = Path.Combine(dir, $"{name}_{id}{ext}");
 
             sb.Append($"\"{OutputPath}\"");
-
             return sb.ToString();
         }
 
@@ -313,6 +328,23 @@ namespace Convert.Core
 
             await process.WaitForExitAsync();
             return process.ExitCode;
+        }
+
+        private void ClearStatisticsTags(StringBuilder sb, int index)
+        {
+            sb.Append($"-metadata:s:a:{index} BPS= ");
+            sb.Append($"-metadata:s:a:{index} NUMBER_OF_BYTES= ");
+            sb.Append($"-metadata:s:a:{index} NUMBER_OF_FRAMES= ");
+            sb.Append($"-metadata:s:a:{index} DURATION= ");
+        }
+        private void WriteStatisticsTags(StringBuilder sb, int index, int bitrateKbps, double durationSeconds)
+        {
+            long bytes = (long)((bitrateKbps * 1000.0 / 8.0) * durationSeconds);
+
+            sb.Append($"-metadata:s:a:{index} BPS={bitrateKbps * 1000} ");
+            sb.Append($"-metadata:s:a:{index} NUMBER_OF_BYTES={bytes} ");
+            sb.Append($"-metadata:s:a:{index} DURATION={durationSeconds} ");
+            sb.Append($"-metadata:s:a:{index} NUMBER_OF_FRAMES=0 ");
         }
     }
 }

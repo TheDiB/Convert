@@ -15,10 +15,11 @@ public class AudioTrackViewModel : ViewModelBase
         new ObservableCollection<AudioProfileItem>
         {
             new AudioProfileItem(AudioProfile.Copy, "Copier (sans modification)"),
-            new AudioProfileItem(AudioProfile.Eac3_5_1, "EAC3 5.1 (640 kbps)"),
+            new AudioProfileItem(AudioProfile.Aac_7_1, "AAC 7.1 (896 kbps)"),
+            new AudioProfileItem(AudioProfile.Eac3_5_1, "EAC3 5.1 (1536 kbps)"),
             new AudioProfileItem(AudioProfile.Ac3_5_1, "AC3 5.1 (640 kbps)"),
-            //new AudioProfileItem(AudioProfile.Dts_5_1, "DTS 5.1 (384 kbps)"),
-            new AudioProfileItem(AudioProfile.Ac3_2_0, "AC3 2.0 (192 kbps)"),            
+            new AudioProfileItem(AudioProfile.Aac_5_1, "AAC 5.1 (512 kbps)"),
+            new AudioProfileItem(AudioProfile.Ac3_2_0, "AC3 2.0 (192 kbps)"),
             new AudioProfileItem(AudioProfile.Aac_2_0, "AAC 2.0 (320 kbps)"),
             new AudioProfileItem(AudioProfile.Mp3_2_0, "MP3 2.0 (192 kbps)"),
             new AudioProfileItem(AudioProfile.Ignore, "Ignorer cette piste")

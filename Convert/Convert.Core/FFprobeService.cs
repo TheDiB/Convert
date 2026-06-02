@@ -67,17 +67,16 @@ namespace Convert.Core
                     int index = stream.TryGetProperty("index", out var indexProp) ? indexProp.GetInt32() : -1;
                     string type = stream.TryGetProperty("codec_type", out var typeProp) ? typeProp.GetString() ?? "unknown" : "unknown";
 
-                    //
-                    // --- AUDIO ---
-                    //
+                    #region AUDIO
                     if (type == "audio")
                     {
+                        int? bitRate = ExtractBitrate(stream);
                         var audio = new AudioStreamInfo
                         {
                             Index = index,
                             Codec = codec,
                             Channels = stream.TryGetProperty("channels", out var ch) ? ch.GetInt32() : 0,
-                            Bitrate = stream.TryGetProperty("bit_rate", out var br) && int.TryParse(br.GetString(), out var bitrate) ? bitrate / 1000 : 0,
+                            Bitrate = bitRate.HasValue ? bitRate.Value / 1000 : 0,
 
                             // Channel layout
                             ChannelLayout = stream.TryGetProperty("channel_layout", out var layoutProp)
@@ -127,10 +126,9 @@ namespace Convert.Core
 
                         result.AudioStreams.Add(audio);
                     }
+                    #endregion
 
-                    //
-                    // --- SOUS-TITRES ---
-                    //
+                    #region SOUS-TITRES
                     if (type == "subtitle")
                     {
                         var subtitles = new SubtitleStreamInfo();
@@ -157,10 +155,9 @@ namespace Convert.Core
 
                         result.SubtitleStreams.Add(subtitles);
                     }
+                    #endregion
 
-                    //
-                    // --- VIDÉO ---
-                    //
+                    #region VIDEO
                     if (type == "video")
                     {
                         var video = new VideoStreamInfo();
@@ -227,6 +224,7 @@ namespace Convert.Core
 
                         result.VideoStreams.Add(video);
                     }
+                    #endregion
                 }
             }
 
@@ -254,6 +252,43 @@ namespace Convert.Core
             // Re-décodage ANSI → UTF8
             var bytes = Encoding.Default.GetBytes(input);
             return Encoding.UTF8.GetString(bytes);
+        }
+
+        public static int? ExtractBitrate(JsonElement stream)
+        {
+            // 1) bit_rate direct
+            if (stream.TryGetProperty("bit_rate", out var brProp))
+            {
+                if (int.TryParse(brProp.GetString(), out int br) && br > 0)
+                    return br;
+            }
+
+            // 2) tags.BPS
+            if (stream.TryGetProperty("tags", out var tags))
+            {
+                if (tags.TryGetProperty("BPS", out var bpsProp))
+                {
+                    if (int.TryParse(bpsProp.GetString(), out int bps) && bps > 0)
+                        return bps;
+                }
+
+                // 3) NUMBER_OF_BYTES + DURATION
+                if (tags.TryGetProperty("NUMBER_OF_BYTES", out var bytesProp) &&
+                    tags.TryGetProperty("DURATION", out var durProp))
+                {
+                    if (long.TryParse(bytesProp.GetString(), out long bytes) &&
+                        TimeSpan.TryParse(durProp.GetString(), out var duration) &&
+                        duration.TotalSeconds > 0)
+                    {
+                        long bitrate = (long)(bytes * 8 / duration.TotalSeconds);
+                        if (bitrate > 0)
+                            return (int)bitrate;
+                    }
+                }
+            }
+
+            // 4) Rien trouvé → VBR
+            return null;
         }
     }
 }
