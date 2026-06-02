@@ -241,6 +241,8 @@ namespace Convert.Core
                 }
             }
 
+            result.RawJson = json;
+
             return result;
         }
 

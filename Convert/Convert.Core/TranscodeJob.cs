@@ -60,6 +60,20 @@ namespace Convert.Core
                 Status = "Analyzing";
                 Analysis = await probe.AnalyzeAsync(InputPath, token, p => FFprobeProcess = p);
 
+                if (options.DumpDebugFiles)
+                {
+                    var reportDir = Path.Combine(
+                        Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+                        "Convert",
+                        "Reports",
+                        Path.GetFileNameWithoutExtension(InputPath)
+                    );
+
+                    Directory.CreateDirectory(reportDir);
+
+                    File.WriteAllText(Path.Combine(reportDir, "analysis.json"), Analysis.RawJson);
+                }
+
                 if (!AnalysisEventFired)
                 {
                     AnalysisEventFired = true;
@@ -82,7 +96,9 @@ namespace Convert.Core
                     log,
                     line => ParseProgress(line, Analysis.DurationSeconds),
                     token,
-                    p => FFmpegProcess = p);
+                    p => FFmpegProcess = p,
+                    options.DumpDebugFiles,
+                    InputPath);
 
                 // 🔥 1) Annulation volontaire (Stop ONE ou Stop ALL)
                 if (this.Cts.IsCancellationRequested || isStopAllRequested())

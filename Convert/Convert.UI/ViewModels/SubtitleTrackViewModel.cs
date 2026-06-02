@@ -11,18 +11,30 @@ namespace Convert.UI.ViewModels
         public string LanguageName { get; set; }
         public string Title { get; set; }
 
-        public bool IsBitmap => RawCodec is "hdmv_pgs_subtitle"
+        public bool IsBitmap =>
+            RawCodec is "hdmv_pgs_subtitle"
                      or "dvd_subtitle"
                      or "xsub"
-                     or "dvb_subtitle";
+                     or "dvb_subtitle"
+                     or "pgssub";
 
-        public ObservableCollection<SubtitleProfileItem> AvailableProfiles { get; } =
-            new ObservableCollection<SubtitleProfileItem>
+        public ObservableCollection<SubtitleProfileItem> AvailableProfiles { get; }
+            = new ObservableCollection<SubtitleProfileItem>();
+
+        private SubtitleProfileItem _selectedProfileItem;
+        public SubtitleProfileItem SelectedProfileItem
+        {
+            get => _selectedProfileItem;
+            set
             {
-                    new SubtitleProfileItem(SubtitleProfile.Copy, "Copier (sans modification)"),
-                    new SubtitleProfileItem(SubtitleProfile.ConvertToSrt, "Conversion (vers SRT)"),
-                    new SubtitleProfileItem(SubtitleProfile.Ignore, "Ignorer cette piste")
-            };
+                if (_selectedProfileItem != value)
+                {
+                    _selectedProfileItem = value;
+                    OnPropertyChanged();
+                    SelectedProfile = _selectedProfileItem?.Profile ?? SubtitleProfile.Copy;
+                }
+            }
+        }
 
         private SubtitleProfile _selectedProfile = SubtitleProfile.Copy;
         public SubtitleProfile SelectedProfile
@@ -40,7 +52,25 @@ namespace Convert.UI.ViewModels
 
         public SubtitleTrackViewModel()
         {
-            SelectedProfile = SubtitleProfile.Copy;
+            // Par défaut : profil texte
+            AvailableProfiles.Add(new SubtitleProfileItem(SubtitleProfile.Copy, "Copier (sans modification)"));
+            AvailableProfiles.Add(new SubtitleProfileItem(SubtitleProfile.ConvertToSrt, "Conversion (vers SRT)"));
+            AvailableProfiles.Add(new SubtitleProfileItem(SubtitleProfile.Ignore, "Ignorer cette piste"));
+
+            SelectedProfileItem = AvailableProfiles.First();
+        }
+
+        public void SetAvailableProfiles(IEnumerable<SubtitleProfileItem> profiles)
+        {
+            var list = profiles.ToList();
+
+            AvailableProfiles.Clear();
+            foreach (var p in list)
+                AvailableProfiles.Add(p);
+
+            // On recale SelectedProfileItem sur la liste
+            var match = AvailableProfiles.FirstOrDefault(p => p.Profile == SelectedProfile);
+            SelectedProfileItem = match ?? AvailableProfiles.FirstOrDefault();
         }
     }
 }

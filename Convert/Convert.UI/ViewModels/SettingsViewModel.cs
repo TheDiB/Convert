@@ -53,6 +53,7 @@ namespace Convert.UI.ViewModels
 
         public bool AutoDownloadFfmpeg { get; set; }
         public bool EnableReports { get; set; }
+        public bool DumpDebugFiles { get; set; }
         public bool AutoAnalyze { get; set; }
         public bool StartMaximized { get; set; }
         public bool EnableWindowsNotifications { get; set; }
@@ -74,6 +75,7 @@ namespace Convert.UI.ViewModels
 
             AutoDownloadFfmpeg = _service.Settings.AutoDownloadFfmpeg;
             EnableReports = _service.Settings.EnableReports;
+            DumpDebugFiles = _service.Settings.DumpDebugFiles;
             AutoAnalyze = _service.Settings.AutoAnalyze;
             StartMaximized = _service.Settings.StartMaximized;
             EnableWindowsNotifications = _service.Settings.EnableWindowsNotifications;
@@ -101,6 +103,7 @@ namespace Convert.UI.ViewModels
 
             _service.Settings.AutoDownloadFfmpeg = AutoDownloadFfmpeg;
             _service.Settings.EnableReports = EnableReports;
+            _service.Settings.DumpDebugFiles = DumpDebugFiles;
             _service.Settings.AutoAnalyze = AutoAnalyze;
             _service.Settings.StartMaximized = StartMaximized;
             _service.Settings.EnableWindowsNotifications = EnableWindowsNotifications;

@@ -278,8 +278,9 @@ namespace Convert.Core
             return sb.ToString();
         }
 
-        public async Task<int> ExecuteAsync(string arguments, Action<string> log, Action<string> onProgressLine, CancellationToken token, Action<Process>? onProcessCreated = null)
+        public async Task<int> ExecuteAsync(string arguments, Action<string> log, Action<string> onProgressLine, CancellationToken token, Action<Process>? onProcessCreated, bool dumpDebug, string inputPath)
         {
+            var fullLog = new StringBuilder();
             var process = new Process
             {
                 StartInfo = new ProcessStartInfo
@@ -307,6 +308,7 @@ namespace Convert.Core
             {
                 if (e.Data != null)
                 {
+                    fullLog.AppendLine(e.Data);
                     log(e.Data);
                     onProgressLine(e.Data);
                 }
@@ -316,6 +318,7 @@ namespace Convert.Core
             {
                 if (e.Data != null)
                 {
+                    fullLog.AppendLine(e.Data);
                     log(e.Data);
                     onProgressLine(e.Data);
                 }
@@ -327,6 +330,21 @@ namespace Convert.Core
             process.BeginErrorReadLine();
 
             await process.WaitForExitAsync();
+
+            if (dumpDebug)
+            {
+                var reportDir = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+                    "Convert",
+                    "Reports",
+                    Path.GetFileNameWithoutExtension(inputPath)
+                );
+
+                Directory.CreateDirectory(reportDir);
+
+                File.WriteAllText(Path.Combine(reportDir, "ffmpeg.log"), fullLog.ToString());
+            }
+
             return process.ExitCode;
         }
 

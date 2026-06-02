@@ -214,14 +214,13 @@
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                             <ComboBox ItemsSource="{Binding AvailableProfiles}"
-                                            SelectedValue="{Binding SelectedProfile, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                            IsEnabled="{Binding IsBitmap, Converter={StaticResource InverseBoolConverter}}"
-                                            SelectedValuePath="Profile"
-                                            DisplayMemberPath="Label"
-                                            Style="{StaticResource MaterialDesignOutlinedComboBox}"/>
-
-                                            <material:PackIcon Kind="Warning" Margin="0 0 5 0" ToolTip="Cette piste est un sous-titre bitmap (PGS/VobSub). La conversion en SRT n'est pas encore supportée." 
-                                                               Visibility="{Binding IsBitmap, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                                SelectedItem="{Binding SelectedProfileItem, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                DisplayMemberPath="Label"
+                                                Style="{StaticResource MaterialDesignOutlinedComboBox}"/>
+                                            <material:PackIcon Kind="Warning"
+                                                Margin="0 0 5 0"
+                                                ToolTip="Cette piste est un sous-titre bitmap (PGS/VobSub). La conversion en SRT n'est pas encore supportée."
+                                                Visibility="{Binding IsBitmap, Converter={StaticResource BoolToVisibilityConverter}}"/>
                                         </StackPanel>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
@@ -230,14 +229,13 @@
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                             <ComboBox ItemsSource="{Binding AvailableProfiles}"
-                                            SelectedValue="{Binding SelectedProfile, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                            IsEnabled="{Binding IsBitmap, Converter={StaticResource InverseBoolConverter}}"
-                                            SelectedValuePath="Profile"
-                                            DisplayMemberPath="Label"
-                                            Style="{StaticResource MaterialDesignOutlinedComboBox}"/>
-
-                                            <material:PackIcon Kind="Warning" Margin="0 0 5 0" ToolTip="Cette piste est un sous-titre bitmap (PGS/VobSub). La conversion en SRT n'est pas encore supportée." 
-                                                               Visibility="{Binding IsBitmap, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                                SelectedItem="{Binding SelectedProfileItem, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                DisplayMemberPath="Label"
+                                                Style="{StaticResource MaterialDesignOutlinedComboBox}"/>
+                                            <material:PackIcon Kind="Warning"
+                                                Margin="0 0 5 0"
+                                                ToolTip="Cette piste est un sous-titre bitmap (PGS/VobSub). La conversion en SRT n'est pas encore supportée."
+                                                Visibility="{Binding IsBitmap, Converter={StaticResource BoolToVisibilityConverter}}"/>
                                         </StackPanel>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellEditingTemplate>

@@ -131,6 +131,7 @@ public class MainViewModel : ViewModelBase
 
         OptionsVM = new OptionsViewModel(Options);
         OptionsVM.Options.Container = _settings.Settings.Container;
+        OptionsVM.Options.DumpDebugFiles = _settings.Settings.DumpDebugFiles;
         Jobs = new ObservableCollection<JobViewModel>();
 
         var ffmpegPath = Path.Combine(AppContext.BaseDirectory, "ffmpeg", "ffmpeg.exe");
@@ -151,6 +152,7 @@ public class MainViewModel : ViewModelBase
     public void ReloadSettings()
     {
         OptionsVM.Options.Container = _settings.Settings.Container;
+        OptionsVM.Options.DumpDebugFiles = _settings.Settings.DumpDebugFiles;
     }
 
     private async Task AddFileAsync()
@@ -546,28 +548,58 @@ public class MainViewModel : ViewModelBase
                     Title = sub.Title
                 };
 
-                //
-                // 🔥 Si c’est un sous-titre bitmap → forcer Copy
-                //
                 if (vm.IsBitmap)
+                {
+                    vm.SetAvailableProfiles(new[]
+                    {
+                        new SubtitleProfileItem(SubtitleProfile.Copy, "Copier (sans modification)"),
+                        new SubtitleProfileItem(SubtitleProfile.Ignore, "Ignorer cette piste")
+                    });
+
                     vm.SelectedProfile = SubtitleProfile.Copy;
+                }
+                else
+                {
+                    vm.SetAvailableProfiles(new[]
+                    {
+                        new SubtitleProfileItem(SubtitleProfile.Copy, "Copier (sans modification)"),
+                        new SubtitleProfileItem(SubtitleProfile.ConvertToSrt, "Conversion (vers SRT)"),
+                        new SubtitleProfileItem(SubtitleProfile.Ignore, "Ignorer cette piste")
+                    });
+
+                    vm.SelectedProfile = SubtitleProfile.Copy;
+                }
 
                 SelectedJob.SubtitleTracks.Add(vm);
             }
             else
             {
-                // Mise à jour des infos techniques
                 existing.RawCodec = sub.Codec;
                 existing.LanguageName = SubtitleStreamInfo.LanguageMap.TryGetValue(sub.Language, out var lang)
-                            ? lang
-                            : sub.Language;
+                        ? lang
+                        : sub.Language;
                 existing.Title = sub.Title;
 
-                //
-                // 🔥 Si c’est un bitmap, on force Copy même si l’utilisateur avait changé
-                //
-                if (existing.IsBitmap && existing.SelectedProfile != SubtitleProfile.Copy)
-                    existing.SelectedProfile = SubtitleProfile.Copy;
+                if (existing.IsBitmap)
+                {
+                    existing.SetAvailableProfiles(new[]
+                    {
+                new SubtitleProfileItem(SubtitleProfile.Copy, "Copier (sans modification)"),
+                new SubtitleProfileItem(SubtitleProfile.Ignore, "Ignorer cette piste")
+            });
+
+                    if (existing.SelectedProfile == SubtitleProfile.ConvertToSrt)
+                        existing.SelectedProfile = SubtitleProfile.Copy;
+                }
+                else
+                {
+                    existing.SetAvailableProfiles(new[]
+                    {
+                new SubtitleProfileItem(SubtitleProfile.Copy, "Copier (sans modification)"),
+                new SubtitleProfileItem(SubtitleProfile.ConvertToSrt, "Conversion (vers SRT)"),
+                new SubtitleProfileItem(SubtitleProfile.Ignore, "Ignorer cette piste")
+            });
+                }
             }
         }
     }

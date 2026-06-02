@@ -16,6 +16,7 @@
 
         public bool AutoDownloadFfmpeg { get; set; } = true;
         public bool EnableReports { get; set; } = false;
+        public bool DumpDebugFiles { get; set; } = false;
 
         public bool AutoAnalyze { get; set; } = true;
 

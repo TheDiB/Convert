@@ -33,6 +33,7 @@
             <TabItem Header="Général">
                 <StackPanel Margin="20">
                     <CheckBox Content="Génération des rapports" ToolTip="Activer la génération des rapports d'analyse dans le dossier 'Mes Documents\Convert\Reports'" IsChecked="{Binding EnableReports}"/>
+                    <CheckBox Content="Génération des logs" ToolTip="Activer la génération des logs d'analyse et de transcodage des jobs dans le dossier 'Mes Documents\Convert\Reports'" IsChecked="{Binding DumpDebugFiles}"/>
                     <CheckBox Content="Analyse automatique des fichiers" ToolTip="Analyser automatique les fichiers dès leur ajout à la liste" IsChecked="{Binding AutoAnalyze}"/>
                     <CheckBox Content="Activer les notifications Windows" ToolTip="Permettre à Convert de diffuser des notifications dans le Centre de Notifications de Windows" IsChecked="{Binding EnableWindowsNotifications}"/>
                 </StackPanel>
@@ -58,10 +59,10 @@
             <!-- Conversion -->
             <TabItem Header="Conversion">
                 <StackPanel Margin="20">
-                    <TextBlock Text="Conteneur" FontWeight="Bold"/>
+                    <!--<TextBlock Text="Conteneur" FontWeight="Bold"/>
                     <ComboBox ItemsSource="{Binding Containers}"
                         SelectedItem="{Binding Container}"
-                        material:HintAssist.Hint="Conteneur"/>
+                        material:HintAssist.Hint="Conteneur"/>-->
 
                     <TextBlock Text="Nombre de process simultanés" ToolTip="Nombre de threads FFpmeg simultanés lancés au maximum" FontWeight="Bold"/>
                     <Slider Minimum="1" Maximum="8"

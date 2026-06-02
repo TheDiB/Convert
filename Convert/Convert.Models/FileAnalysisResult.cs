@@ -8,6 +8,7 @@
         public List<SubtitleStreamInfo> SubtitleStreams { get; set; } = new();
         public VideoStreamInfo? VideoStream { get; set; } = new();
         public double DurationSeconds { get; set; }
+        public string RawJson { get; set; }
 
         public AnalysisReportModel ToReportEntry()
         {
