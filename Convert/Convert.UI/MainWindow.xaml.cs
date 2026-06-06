@@ -89,5 +89,10 @@ namespace Convert.UI
                 JobList.CommitEdit(DataGridEditingUnit.Row, true);
             }
         }
+
+        private void StackPanel_PreviewMouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+
+        }
     }
 }

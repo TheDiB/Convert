@@ -115,6 +115,7 @@ public class MainViewModel : ViewModelBase
     public ICommand AnalyzeAllCommand { get; }
     public ICommand TranscodeAllCommand { get; }
     public ICommand ClearCommand { get; }
+    public ICommand ClearDoneCommand { get; }
     public ICommand StopAllCommand { get; }
 
     public MainViewModel(SettingsService settings, IDialogService dialogs, FFmpegService ffmpeg)
@@ -144,6 +145,7 @@ public class MainViewModel : ViewModelBase
         AnalyzeAllCommand = new RelayCommand(async _ => await AnalyzeAllAsync());
         TranscodeAllCommand = new RelayCommand(async _ => await TranscodeAllAsync());
         ClearCommand = new RelayCommand(_ => ClearAll());
+        ClearDoneCommand = new RelayCommand(_ => ClearDone(), () => Jobs.Any(s => s.Status == "Done"));
         StopAllCommand = new RelayCommand(async _ => StopAll(), () => !IsStoppingAll);
 
         Jobs.CollectionChanged += (_, __) => RefreshInputs();
@@ -159,19 +161,27 @@ public class MainViewModel : ViewModelBase
     {
         var dialog = new OpenFileDialog
         {
-            Filter = $"Vidéos|{string.Join(";", _settings.Settings.SupportedFileTypes.Split(',').Select(ext => $"*.{ext}"))}"
+            Filter = $"Vidéos|{string.Join(";", _settings.Settings.SupportedFileTypes.Split(',').Select(ext => $"*.{ext}"))}",
+            Multiselect = true
         };
 
         if (dialog.ShowDialog() == true)
         {
-            var vm = AddJobFromFile(dialog.FileName);
-            Notify($"Fichier ajouté avec succès", NotificationLevel.Info);
-
-            if (_settings.Settings.AutoAnalyze)
+            foreach (var f in dialog.FileNames)
             {
-                await Task.Yield(); // laisse le temps au constructeur de VM de finir
-                _ = AnalyzeOneAsync(vm);
+                var vm = AddJobFromFile(f);
+
+                if (_settings.Settings.AutoAnalyze)
+                {
+                    await Task.Yield(); // laisse le temps au constructeur de VM de finir
+                    _ = AnalyzeOneAsync(vm);
+                }
             }
+
+            if (dialog.FileNames.Length == 1)
+                Notify($"Fichier ajouté avec succès", NotificationLevel.Info);
+            else if (dialog.FileNames.Length > 1)
+                Notify($"{dialog.FileNames.Length} fichiers ajoutés avec succès", NotificationLevel.Info);
         }
     }
 
@@ -376,6 +386,15 @@ public class MainViewModel : ViewModelBase
 
         SelectedJob = null;
         Notify($"Liste d'attente effacée", NotificationLevel.Info);
+    }
+    private void ClearDone()
+    {
+        foreach (var job in Jobs.Where(j => j.Status == "Done").ToList())
+            Jobs.Remove(job);
+
+        SelectedJob = null;
+
+        Notify($"Jobs terminés retirés de file", NotificationLevel.Info);
     }
 
     private void StopAll()
