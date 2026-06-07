@@ -23,6 +23,8 @@
         public bool StartMaximized { get; set; } = true;
         public bool EnableWindowsNotifications { get; set; } = true;
 
+        public bool CompatibilityMode { get; set; } = true;
+
         public string FFmpegReleaseURL { get; set; } = "https://api.github.com/repos/BtbN/FFmpeg-Builds/releases/latest";
     }
 }

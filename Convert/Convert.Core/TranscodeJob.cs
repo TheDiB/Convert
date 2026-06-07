@@ -12,6 +12,8 @@ namespace Convert.Core
         public double Progress { get; private set; }
         public Process? FFprobeProcess { get; private set; }
         public Process? FFmpegProcess { get; private set; }
+        public Process? MkvmergeProcess { get; private set; }
+
         public FileAnalysisResult? Analysis { get; private set; }
         public bool AnalysisEventFired { get; private set; }
 
@@ -47,6 +49,7 @@ namespace Convert.Core
         public async Task<JobResult> RunAsync(
             FFprobeService probe,
             FFmpegEngine engine,
+            MkvmergeEngine mkvmergeEngine,
             TranscodeOptions options,
             Action<string> log,
             CancellationToken globalToken,
@@ -100,6 +103,9 @@ namespace Convert.Core
                     options.DumpDebugFiles,
                     InputPath);
 
+                // Récupérer le fichier de sortie généré par FFmpeg
+                OutputPath = engine.OutputFilePath;
+
                 // 🔥 1) Annulation volontaire (Stop ONE ou Stop ALL)
                 if (this.Cts.IsCancellationRequested || isStopAllRequested())
                 {
@@ -110,9 +116,97 @@ namespace Convert.Core
                 // 🔥 2) Succès
                 if (code == 0)
                 {
+                    // --- Étape MKVMerge ---
+                    if (options.CompatibilityMode)
+                    {
+                        Status = "Remuxing";
+
+                        Progress = 0;
+                        ProgressChanged?.Invoke();
+
+                        var mkvArgs = mkvmergeEngine.BuildCommand(OutputPath, InputPath);
+                        int mergeCode = await mkvmergeEngine.ExecuteAsync(
+                            mkvArgs,
+                            log,
+                            p =>
+                            {
+                                Progress = p;
+                                ProgressChanged?.Invoke();
+                            },
+                            token,
+                            p => MkvmergeProcess = p,
+                            options.DumpDebugFiles
+                        );
+
+                        if (mergeCode != 0)
+                        {
+                            Status = "Failed";
+                            return JobResult.Failed;
+                        }
+
+                        // --- Remplacement propre du fichier final ---
+                        string original = OutputPath;                     // ex: movie_reencoded.mkv
+                        string fixedFile = mkvmergeEngine.FinalOutputPath; // ex: movie_fixed.mkv
+
+                        if (!File.Exists(fixedFile))
+                        {
+                            log($"ERROR: MKVMerge output file not found: {fixedFile}");
+                            Status = "Failed";
+                            return JobResult.Failed;
+                        }
+
+                        // 1) Renommer l'ancien fichier pour éviter les collisions
+                        string backup = original + ".bak";
+
+                        try
+                        {
+                            if (File.Exists(backup))
+                                File.Delete(backup);
+
+                            if (File.Exists(original))
+                                File.Move(original, backup);
+                        }
+                        catch (Exception ex)
+                        {
+                            log($"ERROR: Unable to backup original file: {ex.Message}");
+                            Status = "Failed";
+                            return JobResult.Failed;
+                        }
+
+                        // 2) Déplacer le fichier fixed → original
+                        try
+                        {
+                            File.Move(fixedFile, original);
+                        }
+                        catch (Exception ex)
+                        {
+                            log($"ERROR: Unable to replace original file: {ex.Message}");
+                            Status = "Failed";
+
+                            // rollback
+                            if (File.Exists(backup))
+                                File.Move(backup, original);
+
+                            return JobResult.Failed;
+                        }
+
+                        // 3) Nettoyage du backup
+                        try
+                        {
+                            if (File.Exists(backup))
+                                File.Delete(backup);
+                        }
+                        catch { }
+
+                        // 4) Mise à jour du chemin final
+                        OutputPath = original;
+
+                    }
+
                     Status = "Done";
                     return JobResult.Success;
                 }
+
 
                 // 🔥 3) FFmpeg tué volontairement (code négatif)
                 if (code < 0)

@@ -109,6 +109,8 @@ public class MainViewModel : ViewModelBase
 
     private readonly FFprobeService _probe;
     private readonly FFmpegEngine _engine;
+    private readonly MkvmergeService _mkvmerge;
+    private readonly MkvmergeEngine _mkvEngine;
 
     public ICommand AddFileCommand { get; }
     public ICommand AddFolderCommand { get; }
@@ -133,12 +135,16 @@ public class MainViewModel : ViewModelBase
         OptionsVM = new OptionsViewModel(Options);
         OptionsVM.Options.Container = _settings.Settings.Container;
         OptionsVM.Options.DumpDebugFiles = _settings.Settings.DumpDebugFiles;
+        OptionsVM.Options.CompatibilityMode = _settings.Settings.CompatibilityMode;
+
         Jobs = new ObservableCollection<JobViewModel>();
 
         var ffmpegPath = Path.Combine(AppContext.BaseDirectory, "ffmpeg", "ffmpeg.exe");
         var ffprobePath = Path.Combine(AppContext.BaseDirectory, "ffmpeg", "ffprobe.exe");
         _probe = new FFprobeService(ffprobePath);
         _engine = new FFmpegEngine(ffmpegPath);
+        _mkvmerge = new MkvmergeService();
+        _mkvEngine = new MkvmergeEngine(_mkvmerge.ExecutablePath);
 
         AddFileCommand = new RelayCommand(async _ => await AddFileAsync());
         AddFolderCommand = new RelayCommand(_ => AddFolder());
@@ -155,6 +161,7 @@ public class MainViewModel : ViewModelBase
     {
         OptionsVM.Options.Container = _settings.Settings.Container;
         OptionsVM.Options.DumpDebugFiles = _settings.Settings.DumpDebugFiles;
+        OptionsVM.Options.CompatibilityMode = _settings.Settings.CompatibilityMode;
     }
 
     private async Task AddFileAsync()
@@ -238,6 +245,7 @@ public class MainViewModel : ViewModelBase
             await job.Job.RunAsync(
                 _probe,
                 _engine,
+                _mkvEngine,
                 Options,
                 log => job.AppendLog(log),
                 _globalCts.Token,
@@ -310,6 +318,7 @@ public class MainViewModel : ViewModelBase
             var result = await jobVM.Job.RunAsync(
                 _probe,
                 _engine,
+                _mkvEngine,
                 Options,
                 log => jobVM.AppendLog(log),
                 _globalCts.Token,
@@ -446,6 +455,7 @@ public class MainViewModel : ViewModelBase
         await jobVM.Job.RunAsync(
             _probe,
             _engine,
+            _mkvEngine,
             Options,
             log => jobVM.AppendLog(log),
             _globalCts.Token,
@@ -638,5 +648,9 @@ public class MainViewModel : ViewModelBase
 
         var entry = analysis.ToReportEntry();
         FFmpeg.ExportReport(new[] { entry }, "Convert_Unique_Analysis");
+    }
+    public async Task InitializeMkvmergeAsync()
+    {
+        await _mkvmerge.EnsureExistsAsync();
     }
 }

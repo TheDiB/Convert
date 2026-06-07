@@ -63,6 +63,7 @@
                     <ComboBox ItemsSource="{Binding Containers}"
                         SelectedItem="{Binding Container}"
                         material:HintAssist.Hint="Conteneur"/>-->
+                    <CheckBox Content="Mode compatibilité Plex" ToolTip="Modifie le workflow de conversion pour convenir aux exigences de Plex (MKVMerge, sous titres bitmap...)" IsChecked="{Binding CompatibilityMode}"/>
 
                     <TextBlock Text="Nombre de process simultanés" ToolTip="Nombre de threads FFpmeg simultanés lancés au maximum" FontWeight="Bold"/>
                     <Slider Minimum="1" Maximum="8"

@@ -3,13 +3,11 @@
     public enum AudioProfile
     {
         Copy,
+        Flac_auto,
         Aac_7_1,
         Eac3_5_1,
-        Aac_5_1,
         Ac3_5_1,
-        Ac3_2_0,
         Aac_2_0,
-        Mp3_2_0,
         Ignore
     }
 

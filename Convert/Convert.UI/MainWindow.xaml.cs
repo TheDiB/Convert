@@ -50,18 +50,23 @@ namespace Convert.UI
             this.Close();
         }
 
-        private void Window_Loaded(object sender, RoutedEventArgs e)
+        private async void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            if (DataContext is MainViewModel vm)
+            // On déclare vm AVANT le if
+            var vm = DataContext as MainViewModel;
+
+            if (vm != null)
             {
                 vm.FFmpeg.DownloadCompleted += () =>
                 {
-                    // Toujours sur le thread UI
                     Dispatcher.Invoke(() =>
                     {
                         vm.Notify("FFmpeg a été mis à jour avec succès !", Models.NotificationLevel.Success);
                     });
                 };
+
+                // Maintenant vm existe ici aussi
+                await vm.InitializeMkvmergeAsync();
             }
         }
 

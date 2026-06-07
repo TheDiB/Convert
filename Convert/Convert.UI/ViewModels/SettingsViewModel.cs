@@ -57,6 +57,8 @@ namespace Convert.UI.ViewModels
         public bool AutoAnalyze { get; set; }
         public bool StartMaximized { get; set; }
         public bool EnableWindowsNotifications { get; set; }
+        public bool CompatibilityMode { get; set; }
+
 
         public SettingsViewModel(SettingsService service)
         {
@@ -79,6 +81,7 @@ namespace Convert.UI.ViewModels
             AutoAnalyze = _service.Settings.AutoAnalyze;
             StartMaximized = _service.Settings.StartMaximized;
             EnableWindowsNotifications = _service.Settings.EnableWindowsNotifications;
+            CompatibilityMode = _service.Settings.CompatibilityMode;
 
             FfmpegReleaseURL = _service.Settings.FFmpegReleaseURL;
 
@@ -107,6 +110,7 @@ namespace Convert.UI.ViewModels
             _service.Settings.AutoAnalyze = AutoAnalyze;
             _service.Settings.StartMaximized = StartMaximized;
             _service.Settings.EnableWindowsNotifications = EnableWindowsNotifications;
+            _service.Settings.CompatibilityMode = CompatibilityMode;
 
             _service.Settings.FFmpegReleaseURL = FfmpegReleaseURL;
 
