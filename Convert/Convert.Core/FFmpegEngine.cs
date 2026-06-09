@@ -19,7 +19,6 @@ namespace Convert.Core
         {
             var sb = new StringBuilder();
 
-            // --- VIDÉO : header global sécurisé ---
             sb.Append($"-fflags +genpts -avoid_negative_ts make_zero ");
             sb.Append($"-i \"{analysis.FilePath}\" ");
             sb.Append($"-map_metadata -1 ");
@@ -146,7 +145,9 @@ namespace Convert.Core
                     (audio.CodecTagString?.Contains("DTSX", StringComparison.OrdinalIgnoreCase) ?? false);
 
                 // Langue
-                string langCode = audio.Language?.ToLower() ?? "und";
+                if (!options.AudioTrackLanguages.TryGetValue(audio.Index, out string langCode))
+                    langCode = audio.Language?.ToLower() ?? "und";
+
                 string langName = AudioLanguageStreamInfo.LanguageMap.ContainsKey(langCode) ? AudioLanguageStreamInfo.LanguageMap[langCode] : langCode;
 
                 // Canaux + layout
@@ -178,8 +179,11 @@ namespace Convert.Core
                 switch (profile)
                 {
                     case AudioProfile.Copy:
-                        sb.Append($"-c:a:{outAudioIndex} copy ");
-                        break;
+                        {
+                            sb.Append($"-metadata:s:a:{outAudioIndex} language={langCode} ");
+                            sb.Append($"-c:a:{outAudioIndex} copy ");
+                            break;
+                        }
 
                     case AudioProfile.Flac_auto:
                         {
@@ -204,6 +208,7 @@ namespace Convert.Core
                             sb.Append($"-compression_level:{outAudioIndex} 5 "); // bon compromis vitesse/ratio
                             sb.Append($"-ac:{outAudioIndex} {channels} ");
                             sb.Append($"-channel_layout:{outAudioIndex} {layout} ");
+                            sb.Append($"-metadata:s:a:{outAudioIndex} language={langCode} ");
                             sb.Append($"-metadata:s:a:{outAudioIndex} title=\"{langName} FLAC {layout.ToUpper()}\" ");
                             break;
                         }
@@ -215,6 +220,7 @@ namespace Convert.Core
                             sb.Append($"-ac:{outAudioIndex} 8 ");
                             sb.Append($"-channel_layout:{outAudioIndex} 7.1 ");
                             sb.Append($"-filter:a:{outAudioIndex} \"pan=7.1\" ");
+                            sb.Append($"-metadata:s:a:{outAudioIndex} language={langCode} ");
                             sb.Append($"-metadata:s:a:{outAudioIndex} title=\"{langName} AAC 7.1 896k\" ");
                             break;
                         }
@@ -224,7 +230,7 @@ namespace Convert.Core
                             sb.Append($"-c:a:{outAudioIndex} eac3 ");
                             sb.Append($"-b:a:{outAudioIndex} 640k ");
                             sb.Append($"-ac:{outAudioIndex} 6 ");
-                            //sb.Append($"-channel_layout:{outAudioIndex} 5.1 ");
+                            sb.Append($"-metadata:s:a:{outAudioIndex} language={langCode} ");
                             sb.Append($"-metadata:s:a:{outAudioIndex} title=\"{langName} EAC3 5.1 640k\" ");
                             break;
                         }
@@ -235,44 +241,10 @@ namespace Convert.Core
                             sb.Append($"-b:a:{outAudioIndex} 640k ");
                             sb.Append($"-ac:{outAudioIndex} 6 ");
                             sb.Append($"-channel_layout:{outAudioIndex} 5.1 ");
+                            sb.Append($"-metadata:s:a:{outAudioIndex} language={langCode} ");
                             sb.Append($"-metadata:s:a:{outAudioIndex} title=\"{langName} AC3 5.1 640k\" ");
                             break;
                         }
-
-                    //case AudioProfile.Aac_5_1:
-                    //    {
-                    //        sb.Append($"-c:a:{outAudioIndex} aac ");
-                    //        sb.Append($"-b:a:{outAudioIndex} 512k ");
-                    //        sb.Append($"-ac:{outAudioIndex} 6 ");
-                    //        sb.Append($"-channel_layout:{outAudioIndex} 5.1 ");
-                    //        sb.Append($"-filter:a:{outAudioIndex} \"pan=5.1\" ");
-                    //        WriteStatisticsTags(sb, outAudioIndex, 512, analysis.DurationSeconds);
-                    //        sb.Append($"-metadata:s:a:{outAudioIndex} title=\"{langName} AAC 5.1 512k\" ");
-                    //        break;
-                    //    }
-
-                    //case AudioProfile.Ac3_2_0:
-                    //    {
-                    //        sb.Append($"-c:a:{outAudioIndex} ac3 ");
-                    //        sb.Append($"-b:a:{outAudioIndex} 192k ");
-                    //        sb.Append($"-ac:{outAudioIndex} 2 ");
-                    //        sb.Append($"-channel_layout:{outAudioIndex} stereo ");
-                    //        sb.Append($"-af:a:{outAudioIndex} pan=stereo ");
-                    //        WriteStatisticsTags(sb, outAudioIndex, 192, analysis.DurationSeconds);
-                    //        sb.Append($"-metadata:s:a:{outAudioIndex} title=\"{langName} AC3 2.0 192k\" ");
-                    //        break;
-                    //    }
-
-                    //case AudioProfile.Mp3_2_0:
-                    //    {
-                    //        sb.Append($"-c:a:{outAudioIndex} mp3 ");
-                    //        sb.Append($"-b:a:{outAudioIndex} 192k ");
-                    //        sb.Append($"-ac:{outAudioIndex} 2 ");
-                    //        sb.Append($"-channel_layout:{outAudioIndex} stereo ");
-                    //        WriteStatisticsTags(sb, outAudioIndex, 192, analysis.DurationSeconds);
-                    //        sb.Append($"-metadata:s:a:{outAudioIndex} title=\"{langName} MP3 2.0 192k\" ");
-                    //        break;
-                    //    }
 
                     case AudioProfile.Aac_2_0:
                         {
@@ -280,6 +252,7 @@ namespace Convert.Core
                             sb.Append($"-b:a:{outAudioIndex} 320k ");
                             sb.Append($"-ac:{outAudioIndex} 2 ");
                             sb.Append($"-af:a:{outAudioIndex} pan=stereo ");
+                            sb.Append($"-metadata:s:a:{outAudioIndex} language={langCode} ");
                             sb.Append($"-metadata:s:a:{outAudioIndex} title=\"{langName} AAC 2.0 320k\" ");
                             break;
                         }

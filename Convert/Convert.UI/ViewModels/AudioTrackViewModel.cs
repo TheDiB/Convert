@@ -10,6 +10,11 @@ public class AudioTrackViewModel : ViewModelBase
     public string LanguageName { get; set; } = "";
     public string Title { get; set; } = "";
     public int Bitrate { get; set; }
+    public string SelectedLanguage { get; set; }
+
+    public ObservableCollection<KeyValuePair<string, string>> AvailableLanguages { get; }
+        = new ObservableCollection<KeyValuePair<string, string>>(
+            AudioLanguageStreamInfo.LanguageMap);
 
     public ObservableCollection<AudioProfileItem> AvailableProfiles { get; } =
         new ObservableCollection<AudioProfileItem>

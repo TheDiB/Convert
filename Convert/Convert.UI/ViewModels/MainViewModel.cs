@@ -27,6 +27,7 @@ public class MainViewModel : ViewModelBase
     }
 
     public ObservableCollection<JobViewModel> Jobs { get; } = new();
+
     private SemaphoreSlim _parallelLimiter;
     public OptionsViewModel OptionsVM { get; }
     public IDialogService Dialogs { get; }
@@ -307,6 +308,10 @@ public class MainViewModel : ViewModelBase
             foreach (var track in jobVM.AudioTracks)
                 Options.AudioTrackProfiles[track.Index] = track.SelectedProfile;
 
+            Options.AudioTrackLanguages.Clear();
+            foreach (var track in jobVM.AudioTracks)
+                Options.AudioTrackLanguages[track.Index] = track.SelectedLanguage?.ToLower() ?? "und";
+
             Options.VideoTrackProfiles.Clear();
             foreach (var track in jobVM.VideoTracks)
                 Options.VideoTrackProfiles[track.Index] = track.SelectedProfile;
@@ -506,7 +511,8 @@ public class MainViewModel : ViewModelBase
                             ? lang
                             : audio.Language,
                     Bitrate = audio.Bitrate,
-                    Title = audio.Title
+                    Title = audio.Title,
+                    SelectedLanguage = audio.Language ?? "und"
                 });
             }
             else
@@ -585,7 +591,7 @@ public class MainViewModel : ViewModelBase
                         new SubtitleProfileItem(SubtitleProfile.Ignore, "Ignorer cette piste")
                     });
 
-                    vm.SelectedProfile = SubtitleProfile.Copy;
+                    vm.SelectedProfile = Options.CompatibilityMode ? SubtitleProfile.Ignore : SubtitleProfile.Copy;
                 }
                 else
                 {
@@ -613,21 +619,21 @@ public class MainViewModel : ViewModelBase
                 {
                     existing.SetAvailableProfiles(new[]
                     {
-                new SubtitleProfileItem(SubtitleProfile.Copy, "Copier (sans modification)"),
-                new SubtitleProfileItem(SubtitleProfile.Ignore, "Ignorer cette piste")
-            });
+                        new SubtitleProfileItem(SubtitleProfile.Copy, "Copier (sans modification)"),
+                        new SubtitleProfileItem(SubtitleProfile.Ignore, "Ignorer cette piste")
+                    });
 
                     if (existing.SelectedProfile == SubtitleProfile.ConvertToSrt)
-                        existing.SelectedProfile = SubtitleProfile.Copy;
+                        existing.SelectedProfile = Options.CompatibilityMode ? SubtitleProfile.Ignore : SubtitleProfile.Copy;
                 }
                 else
                 {
                     existing.SetAvailableProfiles(new[]
                     {
-                new SubtitleProfileItem(SubtitleProfile.Copy, "Copier (sans modification)"),
-                new SubtitleProfileItem(SubtitleProfile.ConvertToSrt, "Conversion (vers SRT)"),
-                new SubtitleProfileItem(SubtitleProfile.Ignore, "Ignorer cette piste")
-            });
+                        new SubtitleProfileItem(SubtitleProfile.Copy, "Copier (sans modification)"),
+                        new SubtitleProfileItem(SubtitleProfile.ConvertToSrt, "Conversion (vers SRT)"),
+                        new SubtitleProfileItem(SubtitleProfile.Ignore, "Ignorer cette piste")
+                    });
                 }
             }
         }
@@ -649,6 +655,7 @@ public class MainViewModel : ViewModelBase
         var entry = analysis.ToReportEntry();
         FFmpeg.ExportReport(new[] { entry }, "Convert_Unique_Analysis");
     }
+
     public async Task InitializeMkvmergeAsync()
     {
         await _mkvmerge.EnsureExistsAsync();

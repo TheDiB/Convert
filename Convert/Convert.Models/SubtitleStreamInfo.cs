@@ -4,7 +4,6 @@
     {
         public static readonly Dictionary<string, string> LanguageMap = new()
         {
-            { "fre", "Francais" },
             { "fra", "Francais" },
             { "eng", "Anglais" },
             { "spa", "Espagnol" },
