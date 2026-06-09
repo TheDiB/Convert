@@ -320,6 +320,10 @@ public class MainViewModel : ViewModelBase
             foreach (var track in jobVM.SubtitleTracks)
                 Options.SubtitleTrackProfiles[track.Index] = track.SelectedProfile;
 
+            Options.SubtitleTrackLanguages.Clear();
+            foreach (var track in jobVM.SubtitleTracks)
+                Options.SubtitleTrackLanguages[track.Index] = track.SelectedLanguage?.ToLower() ?? "und";
+
             var result = await jobVM.Job.RunAsync(
                 _probe,
                 _engine,
@@ -580,7 +584,8 @@ public class MainViewModel : ViewModelBase
                     LanguageName = SubtitleStreamInfo.LanguageMap.TryGetValue(sub.Language, out var lang)
                             ? lang
                             : sub.Language,
-                    Title = sub.Title
+                    Title = sub.Title,
+                    SelectedLanguage = sub.Language ?? "und"
                 };
 
                 if (vm.IsBitmap)

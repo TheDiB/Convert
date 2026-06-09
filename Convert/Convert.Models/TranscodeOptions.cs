@@ -6,6 +6,7 @@
         public bool DumpDebugFiles { get; set; } = false;
         public bool CompatibilityMode { get; set; } = false;
         public Dictionary<int, string> AudioTrackLanguages { get; set; } = new();
+        public Dictionary<int, string> SubtitleTrackLanguages { get; set; } = new();
 
 
         public Dictionary<int, AudioProfile> AudioTrackProfiles { get; set; } = new Dictionary<int, AudioProfile>();

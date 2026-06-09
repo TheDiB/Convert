@@ -243,7 +243,35 @@
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="N°" Binding="{Binding Index}" Width="50"/>
                             <DataGridTextColumn Header="Codec" Binding="{Binding Codec}" Width="250"/>
-                            <DataGridTextColumn Header="Langue" Binding="{Binding LanguageName}" Width="120"/>
+
+                            <DataGridTemplateColumn Header="Langue" Width="150">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <ComboBox
+                                            ItemsSource="{Binding AvailableLanguages}"
+                                            SelectedValuePath="Key"
+                                            DisplayMemberPath="Value"
+                                            SelectedValue="{Binding SelectedLanguage, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                            Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                                            FontSize="12"
+                                            Margin="-12"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+
+                                <DataGridTemplateColumn.CellEditingTemplate>
+                                    <DataTemplate>
+                                        <ComboBox
+                                            ItemsSource="{Binding AvailableLanguages}"
+                                            SelectedValuePath="Key"
+                                            DisplayMemberPath="Value"
+                                            SelectedValue="{Binding SelectedLanguage, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                            Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                                            FontSize="12"
+                                            Margin="-12"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellEditingTemplate>
+                            </DataGridTemplateColumn>
+
                             <DataGridTextColumn Header="Titre" Binding="{Binding Title}" Width="350"/>
 
                             <DataGridTemplateColumn Header="Action" Width="300">

@@ -87,6 +87,11 @@ namespace Convert.Core
                 if (!options.SubtitleTrackProfiles.TryGetValue(sub.Index, out var profile))
                     profile = SubtitleProfile.Copy; // fallback par défaut
 
+                if (!options.SubtitleTrackLanguages.TryGetValue(sub.Index, out string langCode))
+                    langCode = sub.Language?.ToLower() ?? "und";
+
+                string langName = SubtitleStreamInfo.LanguageMap.ContainsKey(langCode) ? SubtitleStreamInfo.LanguageMap[langCode] : langCode;
+
                 switch (profile)
                 {
                     case SubtitleProfile.Ignore:
@@ -96,11 +101,15 @@ namespace Convert.Core
                     case SubtitleProfile.Copy:
                         sb.Append($"-map 0:{sub.Index} ");
                         sb.Append($"-c:s:{subtitleIndex} copy ");
+                        sb.Append($"-metadata:s:s:{subtitleIndex} language={langCode} ");
+                        sb.Append($"-metadata:s:s:{subtitleIndex} title=\"{langName}\" ");
                         break;
 
                     case SubtitleProfile.ConvertToSrt:
                         sb.Append($"-map 0:{sub.Index} ");
                         sb.Append($"-c:s:{subtitleIndex} srt ");
+                        sb.Append($"-metadata:s:s:{subtitleIndex} language={langCode} ");
+                        sb.Append($"-metadata:s:s:{subtitleIndex} title=\"{langName} SRT\" ");
                         break;
 
                     default:

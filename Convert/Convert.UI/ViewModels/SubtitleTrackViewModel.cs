@@ -18,6 +18,12 @@ namespace Convert.UI.ViewModels
                      or "dvb_subtitle"
                      or "pgssub";
 
+        public string SelectedLanguage { get; set; }
+
+        public ObservableCollection<KeyValuePair<string, string>> AvailableLanguages { get; }
+            = new ObservableCollection<KeyValuePair<string, string>>(
+                AudioLanguageStreamInfo.LanguageMap);
+
         public ObservableCollection<SubtitleProfileItem> AvailableProfiles { get; }
             = new ObservableCollection<SubtitleProfileItem>();
 
