@@ -4,12 +4,15 @@
     {
         public static readonly Dictionary<string, string> LanguageMap = new()
         {
-            { "fra", "Francais" },
+            { "fre", "Francais" },
             { "eng", "Anglais" },
             { "spa", "Espagnol" },
             { "ita", "Italien" },
             { "ger", "Allemand" },
             { "jpn", "Japonais" },
+            { "chi", "Chinois" },
+            { "kor", "Coreen" },
+            { "dut", "Neerlandais" },
             { "und", "Inconnu" }
         };
 
