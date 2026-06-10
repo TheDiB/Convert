@@ -144,63 +144,62 @@ namespace Convert.Core
                             return JobResult.Failed;
                         }
 
-                        // --- Remplacement propre du fichier final ---
-                        string original = OutputPath;                     // ex: movie_reencoded.mkv
-                        string fixedFile = mkvmergeEngine.FinalOutputPath; // ex: movie_fixed.mkv
+                        //// --- Remplacement propre du fichier final ---
+                        //string original = OutputPath;                     // ex: movie_reencoded.mkv
+                        //string fixedFile = mkvmergeEngine.FinalOutputPath; // ex: movie_fixed.mkv
 
-                        if (!File.Exists(fixedFile))
-                        {
-                            log($"ERROR: MKVMerge output file not found: {fixedFile}");
-                            Status = "Failed";
-                            return JobResult.Failed;
-                        }
+                        //if (!File.Exists(fixedFile))
+                        //{
+                        //    log($"ERROR: MKVMerge output file not found: {fixedFile}");
+                        //    Status = "Failed";
+                        //    return JobResult.Failed;
+                        //}
 
-                        // 1) Renommer l'ancien fichier pour éviter les collisions
-                        string backup = original + ".bak";
+                        //// 1) Renommer l'ancien fichier pour éviter les collisions
+                        //string backup = original + ".bak";
 
-                        try
-                        {
-                            if (File.Exists(backup))
-                                File.Delete(backup);
+                        //try
+                        //{
+                        //    if (File.Exists(backup))
+                        //        File.Delete(backup);
 
-                            if (File.Exists(original))
-                                File.Move(original, backup);
-                        }
-                        catch (Exception ex)
-                        {
-                            log($"ERROR: Unable to backup original file: {ex.Message}");
-                            Status = "Failed";
-                            return JobResult.Failed;
-                        }
+                        //    if (File.Exists(original))
+                        //        File.Move(original, backup);
+                        //}
+                        //catch (Exception ex)
+                        //{
+                        //    log($"ERROR: Unable to backup original file: {ex.Message}");
+                        //    Status = "Failed";
+                        //    return JobResult.Failed;
+                        //}
 
-                        // 2) Déplacer le fichier fixed → original
-                        try
-                        {
-                            File.Move(fixedFile, original);
-                        }
-                        catch (Exception ex)
-                        {
-                            log($"ERROR: Unable to replace original file: {ex.Message}");
-                            Status = "Failed";
+                        //// 2) Déplacer le fichier fixed → original
+                        //try
+                        //{
+                        //    File.Move(fixedFile, original);
+                        //}
+                        //catch (Exception ex)
+                        //{
+                        //    log($"ERROR: Unable to replace original file: {ex.Message}");
+                        //    Status = "Failed";
 
-                            // rollback
-                            if (File.Exists(backup))
-                                File.Move(backup, original);
+                        //    // rollback
+                        //    if (File.Exists(backup))
+                        //        File.Move(backup, original);
 
-                            return JobResult.Failed;
-                        }
+                        //    return JobResult.Failed;
+                        //}
 
-                        // 3) Nettoyage du backup
-                        try
-                        {
-                            if (File.Exists(backup))
-                                File.Delete(backup);
-                        }
-                        catch { }
+                        //// 3) Nettoyage du backup
+                        //try
+                        //{
+                        //    if (File.Exists(backup))
+                        //        File.Delete(backup);
+                        //}
+                        //catch { }
 
                         // 4) Mise à jour du chemin final
-                        OutputPath = original;
-
+                        //OutputPath = original;
                     }
 
                     Status = "Done";
