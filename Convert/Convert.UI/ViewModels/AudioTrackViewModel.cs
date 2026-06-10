@@ -14,7 +14,7 @@ public class AudioTrackViewModel : ViewModelBase
 
     public ObservableCollection<KeyValuePair<string, string>> AvailableLanguages { get; }
         = new ObservableCollection<KeyValuePair<string, string>>(
-            AudioLanguageStreamInfo.LanguageMap);
+            DicoMaps.AudioLanguageMap);
 
     public ObservableCollection<AudioProfileItem> AvailableProfiles { get; } =
         new ObservableCollection<AudioProfileItem>

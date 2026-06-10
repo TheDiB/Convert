@@ -8,22 +8,20 @@ namespace Convert.Core
     {
         private readonly string _exe;
 
-        public string FinalOutputPath { get; private set; }
-        public string OriginalFileName { get; private set; }
-
         public MkvmergeEngine(string exePath)
         {
             _exe = exePath;
         }
 
-        public string BuildCommand(string inputPath, string originalFileName)
+        // CHANGEMENT : on renvoie (args, finalOutputPath) au lieu de stocker dans des propriétés
+        public (string Arguments, string FinalOutputPath) BuildCommand(string inputPath, string originalFileName)
         {
             var dir = Path.GetDirectoryName(inputPath);
             var name = Path.GetFileNameWithoutExtension(inputPath);
-            FinalOutputPath = Path.Combine(dir, $"{name}_remuxed.mkv");
-            OriginalFileName = originalFileName;
+            var finalOutputPath = Path.Combine(dir, $"{name}_remuxed.mkv");
 
-            return $"-o \"{FinalOutputPath}\" \"{inputPath}\"";
+            var args = $"-o \"{finalOutputPath}\" \"{inputPath}\"";
+            return (args, finalOutputPath);
         }
 
         public async Task<int> ExecuteAsync(
@@ -32,7 +30,8 @@ namespace Convert.Core
             Action<double>? onProgress,
             CancellationToken token,
             Action<Process>? onProcessCreated,
-            bool dumpDebug)
+            bool dumpDebug,
+            string originalFileName)
         {
             var fullLog = new StringBuilder();
 
@@ -80,7 +79,9 @@ namespace Convert.Core
             };
 
             // --- Dump de la commande MKVMerge ---
+            fullLog.AppendLine("=======================");
             fullLog.AppendLine("=== MKVMERGE COMMAND ===");
+            fullLog.AppendLine("=======================");
             fullLog.AppendLine($"{_exe} {args}");
             fullLog.AppendLine();
 
@@ -97,7 +98,7 @@ namespace Convert.Core
                     Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
                     "Convert",
                     "Reports",
-                    Path.GetFileNameWithoutExtension(OriginalFileName)
+                    Path.GetFileNameWithoutExtension(originalFileName)
                 );
 
                 Directory.CreateDirectory(reportDir);
@@ -113,7 +114,6 @@ namespace Convert.Core
             if (onProgress == null)
                 return;
 
-            // Format 1 : "Progress: 47%"
             var m1 = Regex.Match(line, @"Progression :\s*(\d+)%");
             if (m1.Success)
             {
@@ -122,7 +122,6 @@ namespace Convert.Core
                 return;
             }
 
-            // Format 2 : "Muxing in progress: 34%"
             var m2 = Regex.Match(line, @"progression :\s*(\d+)%", RegexOptions.IgnoreCase);
             if (m2.Success)
             {
@@ -130,6 +129,5 @@ namespace Convert.Core
                 onProgress(p);
             }
         }
-
     }
 }

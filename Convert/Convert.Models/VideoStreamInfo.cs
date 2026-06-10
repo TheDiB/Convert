@@ -1,15 +1,5 @@
 ﻿namespace Convert.Models
 {
-    public static class VideoLanguageStreamInfo
-    {
-        public static readonly Dictionary<string, string> CodecMap = new()
-        {
-            { "avc", "AVC (H264)" },
-            { "hevc", "HEVC (H265)" },
-            { "und", "Inconnu" }
-        };
-    }
-
     public class VideoStreamInfo
     {
         public int Index { get; set; }

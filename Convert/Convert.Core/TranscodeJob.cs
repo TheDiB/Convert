@@ -47,13 +47,13 @@ namespace Convert.Core
         }
 
         public async Task<JobResult> RunAsync(
-            FFprobeService probe,
-            FFmpegEngine engine,
-            MkvmergeEngine mkvmergeEngine,
-            TranscodeOptions options,
-            Action<string> log,
-            CancellationToken globalToken,
-            Func<bool> isStopAllRequested)
+                FFprobeService probe,
+                FFmpegEngine engine,
+                MkvmergeEngine mkvmergeEngine,
+                TranscodeOptions options,
+                Action<string> log,
+                CancellationToken globalToken,
+                Func<bool> isStopAllRequested)
         {
             using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(globalToken, this.Cts.Token);
             var token = linkedCts.Token;
@@ -77,12 +77,6 @@ namespace Convert.Core
                     File.WriteAllText(Path.Combine(reportDir, "analysis.json"), Analysis.RawJson);
                 }
 
-                if (!AnalysisEventFired)
-                {
-                    AnalysisEventFired = true;
-                    AnalysisCompleted?.Invoke(Analysis);
-                }
-
                 if (Mode == JobMode.AnalyzeOnly)
                 {
                     DumpAnalysisToLog(Analysis, log);
@@ -91,32 +85,40 @@ namespace Convert.Core
                 }
 
                 Status = "Building command";
-                string args = await engine.BuildCommandAsync(Analysis, options);
+
+                // CHANGEMENT : on récupère args + outputPath
+                var (args, ffmpegOutputPath) = await engine.BuildCommandAsync(Analysis, options);
 
                 Status = "Transcoding";
+
+                Action<string> ffmpegLogger = null;
+
                 int code = await engine.ExecuteAsync(
                     args,
-                    log,
+                    line =>
+                    {
+                        if (ffmpegLogger == null && FFmpegProcess != null)
+                            ffmpegLogger = WrapLogger(log, FFmpegProcess.Id);
+
+                        ffmpegLogger?.Invoke(line);
+                    },
                     line => ParseProgress(line, Analysis.DurationSeconds),
                     token,
                     p => FFmpegProcess = p,
                     options.DumpDebugFiles,
                     InputPath);
 
-                // Récupérer le fichier de sortie généré par FFmpeg
-                OutputPath = engine.OutputFilePath;
+                // Chemin de sortie propre à CE job
+                OutputPath = ffmpegOutputPath;
 
-                // 🔥 1) Annulation volontaire (Stop ONE ou Stop ALL)
                 if (this.Cts.IsCancellationRequested || isStopAllRequested())
                 {
                     Status = "Canceled";
                     return JobResult.Canceled;
                 }
 
-                // 🔥 2) Succès
                 if (code == 0)
                 {
-                    // --- Étape MKVMerge ---
                     if (options.CompatibilityMode)
                     {
                         Status = "Remuxing";
@@ -124,10 +126,20 @@ namespace Convert.Core
                         Progress = 0;
                         ProgressChanged?.Invoke();
 
-                        var mkvArgs = mkvmergeEngine.BuildCommand(OutputPath, InputPath);
+                        // CHANGEMENT : on récupère args + finalOutputPath
+                        var (mkvArgs, finalOutputPath) = mkvmergeEngine.BuildCommand(OutputPath, InputPath);
+
+                        Action<string> mkvLogger = null;
+
                         int mergeCode = await mkvmergeEngine.ExecuteAsync(
                             mkvArgs,
-                            log,
+                            line =>
+                            {
+                                if (mkvLogger == null && MkvmergeProcess != null)
+                                    mkvLogger = WrapLogger(log, MkvmergeProcess.Id);
+
+                                mkvLogger?.Invoke(line);
+                            },
                             p =>
                             {
                                 Progress = p;
@@ -135,8 +147,8 @@ namespace Convert.Core
                             },
                             token,
                             p => MkvmergeProcess = p,
-                            options.DumpDebugFiles
-                        );
+                            options.DumpDebugFiles,
+                            InputPath);
 
                         if (mergeCode != 0)
                         {
@@ -144,9 +156,8 @@ namespace Convert.Core
                             return JobResult.Failed;
                         }
 
-                        //// --- Remplacement propre du fichier final ---
-                        string original = OutputPath;                     // ex: movie_reencoded.mkv
-                        string fixedFile = mkvmergeEngine.FinalOutputPath; // ex: movie_fixed.mkv
+                        string original = OutputPath;       // movie_reencoded.mkv
+                        string fixedFile = finalOutputPath; // movie_reencoded_remuxed.mkv
 
                         if (!File.Exists(fixedFile))
                         {
@@ -155,7 +166,6 @@ namespace Convert.Core
                             return JobResult.Failed;
                         }
 
-                        // 1) Renommer l'ancien fichier pour éviter les collisions
                         string backup = original + ".bak";
 
                         try
@@ -173,7 +183,6 @@ namespace Convert.Core
                             return JobResult.Failed;
                         }
 
-                        // 2) Déplacer le fichier fixed → original
                         try
                         {
                             File.Move(fixedFile, original);
@@ -183,14 +192,12 @@ namespace Convert.Core
                             log($"ERROR: Unable to replace original file: {ex.Message}");
                             Status = "Failed";
 
-                            // rollback
                             if (File.Exists(backup))
                                 File.Move(backup, original);
 
                             return JobResult.Failed;
                         }
 
-                        // 3) Nettoyage du backup
                         try
                         {
                             if (File.Exists(backup))
@@ -198,7 +205,6 @@ namespace Convert.Core
                         }
                         catch { }
 
-                        //4) Mise à jour du chemin final
                         OutputPath = original;
                     }
 
@@ -206,15 +212,12 @@ namespace Convert.Core
                     return JobResult.Success;
                 }
 
-
-                // 🔥 3) FFmpeg tué volontairement (code négatif)
                 if (code < 0)
                 {
                     Status = "Canceled";
                     return JobResult.Canceled;
                 }
 
-                // 🔥 4) Vraie erreur
                 Status = "Failed";
                 return JobResult.Failed;
             }
@@ -319,6 +322,18 @@ namespace Convert.Core
                 log($"Sub #{s.Index} : {s.Codec}");
 
             log("==============================");
+        }
+
+        private Action<string> WrapLogger(Action<string> originalLog, int pid)
+        {
+            return line =>
+            {
+                if (string.IsNullOrWhiteSpace(line))
+                    return;
+
+                string timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
+                originalLog($"[{timestamp}] [PID {pid}] {line}");
+            };
         }
 
         public void Stop()

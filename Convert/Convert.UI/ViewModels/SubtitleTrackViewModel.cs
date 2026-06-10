@@ -22,7 +22,7 @@ namespace Convert.UI.ViewModels
 
         public ObservableCollection<KeyValuePair<string, string>> AvailableLanguages { get; }
             = new ObservableCollection<KeyValuePair<string, string>>(
-                AudioLanguageStreamInfo.LanguageMap);
+                DicoMaps.AudioLanguageMap);
 
         public ObservableCollection<SubtitleProfileItem> AvailableProfiles { get; }
             = new ObservableCollection<SubtitleProfileItem>();

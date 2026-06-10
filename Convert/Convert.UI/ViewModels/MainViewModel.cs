@@ -507,11 +507,11 @@ public class MainViewModel : ViewModelBase
                 SelectedJob.AudioTracks.Add(new AudioTrackViewModel
                 {
                     Index = audio.Index,
-                    Codec = AudioLanguageStreamInfo.CodecMap.TryGetValue(audio.Codec, out var pretty)
+                    Codec = DicoMaps.AudioCodecMap.TryGetValue(audio.Codec, out var pretty)
                             ? pretty
                             : audio.Codec,
                     Channels = audio.Channels,
-                    LanguageName = AudioLanguageStreamInfo.LanguageMap.TryGetValue(audio.Language, out var lang)
+                    LanguageName = DicoMaps.AudioLanguageMap.TryGetValue(audio.Language, out var lang)
                             ? lang
                             : audio.Language,
                     Bitrate = audio.Bitrate,
@@ -523,7 +523,7 @@ public class MainViewModel : ViewModelBase
             {
                 // On met à jour les infos techniques
                 existing.Channels = audio.Channels;
-                existing.LanguageName = AudioLanguageStreamInfo.LanguageMap.TryGetValue(audio.Language, out var lang)
+                existing.LanguageName = DicoMaps.AudioLanguageMap.TryGetValue(audio.Language, out var lang)
                             ? lang
                             : audio.Language;
                 existing.Bitrate = audio.Bitrate;
@@ -545,7 +545,7 @@ public class MainViewModel : ViewModelBase
                 SelectedJob.VideoTracks.Add(new VideoTrackViewModel
                 {
                     Index = video.Index,
-                    Codec = VideoLanguageStreamInfo.CodecMap.TryGetValue(video.Codec, out var pretty)
+                    Codec = DicoMaps.VideoCodecMap.TryGetValue(video.Codec, out var pretty)
                             ? pretty
                             : video.Codec,
                     Width = video.Width,
@@ -578,10 +578,10 @@ public class MainViewModel : ViewModelBase
                 {
                     Index = sub.Index,
                     RawCodec = sub.Codec,
-                    Codec = SubtitleStreamInfo.CodecMap.TryGetValue(sub.Codec, out var pretty)
+                    Codec = DicoMaps.SubtitleCodecMap.TryGetValue(sub.Codec, out var pretty)
                             ? pretty
                             : sub.Codec,
-                    LanguageName = SubtitleStreamInfo.LanguageMap.TryGetValue(sub.Language, out var lang)
+                    LanguageName = DicoMaps.SubtitleLanguageMap.TryGetValue(sub.Language, out var lang)
                             ? lang
                             : sub.Language,
                     Title = sub.Title,
@@ -615,7 +615,7 @@ public class MainViewModel : ViewModelBase
             else
             {
                 existing.RawCodec = sub.Codec;
-                existing.LanguageName = SubtitleStreamInfo.LanguageMap.TryGetValue(sub.Language, out var lang)
+                existing.LanguageName = DicoMaps.SubtitleLanguageMap.TryGetValue(sub.Language, out var lang)
                         ? lang
                         : sub.Language;
                 existing.Title = sub.Title;
