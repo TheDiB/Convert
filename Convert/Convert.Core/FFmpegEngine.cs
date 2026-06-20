@@ -46,7 +46,7 @@ namespace Convert.Core
                         break;
 
                     case VideoProfile.H265_High:
-                        sb.Append($"-c:v:{outVideoIndex} libx265 -preset slow -crf 18 ");
+                        sb.Append($"-c:v:{outVideoIndex} libx265 -preset medium -crf 18 ");
                         break;
 
                     case VideoProfile.H264_Medium:
