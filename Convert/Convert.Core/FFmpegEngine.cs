@@ -39,6 +39,10 @@ namespace Convert.Core
 
                 sb.Append($"-map 0:{video.Index} ");
 
+                bool useNvenc = false;
+                if (options.EnableGPUEncoding && IsNvencAvailable())
+                    useNvenc = true;
+
                 switch (profile)
                 {
                     case VideoProfile.Copy:
@@ -46,20 +50,45 @@ namespace Convert.Core
                         break;
 
                     case VideoProfile.H265_High:
-                        sb.Append($"-c:v:{outVideoIndex} libx265 -preset medium -crf 18 ");
+                        if (useNvenc)
+                        {
+                            sb.Append($"-c:v:{outVideoIndex} hevc_nvenc ");
+                            sb.Append($"-preset p4 ");
+                            sb.Append($"-profile:v:{outVideoIndex} main10 ");
+                            sb.Append($"-rc vbr -cq 19 ");
+                        }
+                        else
+                        {
+                            sb.Append($"-c:v:{outVideoIndex} libx265 -preset medium -crf 18 ");
+                        }
                         break;
 
                     case VideoProfile.H264_Medium:
-                        sb.Append($"-c:v:{outVideoIndex} libx264 -preset medium -crf 20 ");
+                        if (useNvenc)
+                        {
+                            sb.Append($"-c:v:{outVideoIndex} h264_nvenc -preset slow -cq 20 ");
+                        }
+                        else
+                        {
+                            sb.Append($"-c:v:{outVideoIndex} libx264 -preset medium -crf 20 ");
+                        }
                         break;
 
                     case VideoProfile.H264_Low:
-                        sb.Append($"-c:v:{outVideoIndex} libx264 -preset fast -crf 23 ");
+                        if (useNvenc)
+                        {
+                            sb.Append($"-c:v:{outVideoIndex} h264_nvenc -preset fast -cq 25 ");
+                        }
+                        else
+                        {
+                            sb.Append($"-c:v:{outVideoIndex} libx264 -preset fast -crf 23 ");
+                        }
                         break;
 
                     case VideoProfile.Ignore:
                         continue;
                 }
+
 
                 if (dvMode == HDRProfile.StripDv || dvMode == HDRProfile.ForceHdr10)
                 {
@@ -70,16 +99,7 @@ namespace Convert.Core
 
                 if (dvMode == HDRProfile.ForceSdr)
                 {
-                    // Tonemapping HDR -> SDR (nécessite ré-encodage, donc à éviter avec Copy)
-                    sb.Append(
-                        $"-vf:v:{outVideoIndex} " +
-                        "\"zscale=t=linear:npl=100,tonemap=hable," +
-                        "zscale=t=bt709:m=bt709:r=tv,format=yuv420p\" ");
-
-                    // Optionnel : forcer les métadonnées couleurs SDR
-                    sb.Append($"-color_primaries:v:{outVideoIndex} bt709 ");
-                    sb.Append($"-color_trc:v:{outVideoIndex} bt709 ");
-                    sb.Append($"-colorspace:v:{outVideoIndex} bt709 ");
+                    sb.Append($"-vf:v:{outVideoIndex} \"zscale=t=linear:npl=100,tonemap=hable,zscale=t=bt709:m=bt709:r=tv,format=yuv420p\" ");
                 }
 
                 outVideoIndex++;
@@ -404,5 +424,34 @@ namespace Convert.Core
 
             return $"{baseTitle} [{string.Join(", ", markers)}]";
         }
+
+        private bool IsNvencAvailable()
+        {
+            try
+            {
+                var process = new Process
+                {
+                    StartInfo = new ProcessStartInfo
+                    {
+                        FileName = _ffmpegPath,
+                        Arguments = "-hide_banner -encoders",
+                        RedirectStandardOutput = true,
+                        UseShellExecute = false,
+                        CreateNoWindow = true
+                    }
+                };
+
+                process.Start();
+                string output = process.StandardOutput.ReadToEnd();
+                process.WaitForExit();
+
+                return output.Contains("hevc_nvenc");
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
     }
 }

@@ -137,6 +137,7 @@ public class MainViewModel : ViewModelBase
         OptionsVM.Options.Container = _settings.Settings.Container;
         OptionsVM.Options.DumpDebugFiles = _settings.Settings.DumpDebugFiles;
         OptionsVM.Options.CompatibilityMode = _settings.Settings.CompatibilityMode;
+        OptionsVM.Options.EnableGPUEncoding = _settings.Settings.EnableGPUEncoding;
 
         Jobs = new ObservableCollection<JobViewModel>();
 
@@ -163,6 +164,7 @@ public class MainViewModel : ViewModelBase
         OptionsVM.Options.Container = _settings.Settings.Container;
         OptionsVM.Options.DumpDebugFiles = _settings.Settings.DumpDebugFiles;
         OptionsVM.Options.CompatibilityMode = _settings.Settings.CompatibilityMode;
+        OptionsVM.Options.EnableGPUEncoding = _settings.Settings.EnableGPUEncoding;
     }
 
     private async Task AddFileAsync()

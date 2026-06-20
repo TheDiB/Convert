@@ -87,7 +87,7 @@
 
         <GroupBox Grid.Row="2" Header="Pistes détectées" Margin="0 10 0 10"
             Visibility="{Binding SelectedJob, Converter={StaticResource NullToVisibilityConverter}}">
-            <TabControl SelectedIndex="0" Style="{StaticResource MaterialDesignTabControl}" SelectionChanged="TracksTabControl_SelectionChanged">
+            <TabControl SelectedIndex="0" Style="{StaticResource MaterialDesignTabControl}" SelectionChanged="TracksTabControl_SelectionChanged" MaxHeight="500">
                 <!-- Onglet AUDIO -->
                 <TabItem>
                     <TabItem.Header>

@@ -5,6 +5,7 @@
         public static readonly Dictionary<string, string> VideoCodecMap = new()
         {
             { "avc", "AVC (H264)" },
+            { "h264", "AVC (H264)" },
             { "hevc", "HEVC (H265)" },
             { "und", "Inconnu" }
         };
@@ -54,7 +55,7 @@
             { "ass", "Advanced SubStation Alpha (ASS)" },
             { "pgs", "Presentation Graphic Stream (PGS)" },
             { "hdmv_pgs_subtitle", "Presentation Graphic Stream (PGS)" },
-            { "dvd_subtitle ", "VobSub SubTitle File (SUB)" },
+            { "dvd_subtitle", "VobSub SubTitle File (SUB)" },
             { "xsub ", "XSUB" },
             { "dvb_subtitle ", "DVB" },
             { "und", "Inconnu" }

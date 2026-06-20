@@ -58,6 +58,7 @@ namespace Convert.UI.ViewModels
         public bool StartMaximized { get; set; }
         public bool EnableWindowsNotifications { get; set; }
         public bool CompatibilityMode { get; set; }
+        public bool EnableGPUEncoding { get; set; }
 
 
         public SettingsViewModel(SettingsService service)
@@ -82,6 +83,7 @@ namespace Convert.UI.ViewModels
             StartMaximized = _service.Settings.StartMaximized;
             EnableWindowsNotifications = _service.Settings.EnableWindowsNotifications;
             CompatibilityMode = _service.Settings.CompatibilityMode;
+            EnableGPUEncoding = _service.Settings.EnableGPUEncoding;
 
             FfmpegReleaseURL = _service.Settings.FFmpegReleaseURL;
 
@@ -111,6 +113,7 @@ namespace Convert.UI.ViewModels
             _service.Settings.StartMaximized = StartMaximized;
             _service.Settings.EnableWindowsNotifications = EnableWindowsNotifications;
             _service.Settings.CompatibilityMode = CompatibilityMode;
+            _service.Settings.EnableGPUEncoding = EnableGPUEncoding;
 
             _service.Settings.FFmpegReleaseURL = FfmpegReleaseURL;
 

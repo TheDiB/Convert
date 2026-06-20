@@ -59,11 +59,8 @@
             <!-- Conversion -->
             <TabItem Header="Conversion">
                 <StackPanel Margin="20">
-                    <!--<TextBlock Text="Conteneur" FontWeight="Bold"/>
-                    <ComboBox ItemsSource="{Binding Containers}"
-                        SelectedItem="{Binding Container}"
-                        material:HintAssist.Hint="Conteneur"/>-->
-                    <CheckBox Content="Mode compatibilité Plex" ToolTip="Modifie le workflow de conversion pour convenir aux exigences de Plex (MKVMerge, sous titres bitmap...). Cette option créera une 2e copie '_remuxed' du fichier réencodé." IsChecked="{Binding CompatibilityMode}"/>
+                    <CheckBox Content="Ajouter une étape de remux" ToolTip="Modifie le workflow de conversion pour convenir aux exigences de Plex en ajoutant une étape de Remux (MKVMerge) à la fin de l'encodage." IsChecked="{Binding CompatibilityMode}"/>
+                    <CheckBox Content="Encodage accéléré par le GPU" ToolTip="Active le support de l'encodage via le GPU pour soulager le CPU" IsChecked="{Binding EnableGPUEncoding}"/>
 
                     <TextBlock Text="Nombre de process simultanés" ToolTip="Nombre de threads FFpmeg simultanés lancés au maximum" FontWeight="Bold"/>
                     <Slider Minimum="1" Maximum="8"

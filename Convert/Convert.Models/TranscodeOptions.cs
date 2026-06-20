@@ -5,6 +5,8 @@
         public string Container { get; set; }
         public bool DumpDebugFiles { get; set; } = false;
         public bool CompatibilityMode { get; set; } = false;
+        public bool EnableGPUEncoding { get; set; } = false;
+
         public Dictionary<int, string> AudioTrackLanguages { get; set; } = new();
         public Dictionary<int, string> SubtitleTrackLanguages { get; set; } = new();
 

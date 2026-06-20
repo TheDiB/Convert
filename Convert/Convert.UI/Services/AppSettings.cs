@@ -25,6 +25,8 @@
 
         public bool CompatibilityMode { get; set; } = true;
 
+        public bool EnableGPUEncoding { get; set; } = true;
+
         public string FFmpegReleaseURL { get; set; } = "https://api.github.com/repos/BtbN/FFmpeg-Builds/releases/latest";
     }
 }
