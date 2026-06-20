@@ -13,7 +13,6 @@ namespace Convert.Core
             _ffmpegPath = ffmpegPath;
         }
 
-        // CHANGEMENT : on renvoie (arguments, outputPath) au lieu d'utiliser une propriété globale
         public async Task<(string Arguments, string OutputPath)> BuildCommandAsync(
             FileAnalysisResult analysis,
             TranscodeOptions options)
@@ -34,6 +33,9 @@ namespace Convert.Core
 
                 if (profile == VideoProfile.Ignore)
                     continue;
+
+                if (!options.VideoTrackHDRModes.TryGetValue(video.Index, out var dvMode))
+                    dvMode = HDRProfile.Keep;
 
                 sb.Append($"-map 0:{video.Index} ");
 
@@ -57,6 +59,27 @@ namespace Convert.Core
 
                     case VideoProfile.Ignore:
                         continue;
+                }
+
+                if (dvMode == HDRProfile.StripDv || dvMode == HDRProfile.ForceHdr10)
+                {
+                    // Supprime les métadonnées Dolby Vision (RPU) du flux HEVC
+                    //sb.Append($"-bsf:v:{outVideoIndex} hevc_dovi_rpu=remove ");
+                    //NB : depuis 2026, plus de filtre DoVi dans FFMpeg, le réencodage avec suppression des tags suffit à le retirer --> rien à faire
+                }
+
+                if (dvMode == HDRProfile.ForceSdr)
+                {
+                    // Tonemapping HDR -> SDR (nécessite ré-encodage, donc à éviter avec Copy)
+                    sb.Append(
+                        $"-vf:v:{outVideoIndex} " +
+                        "\"zscale=t=linear:npl=100,tonemap=hable," +
+                        "zscale=t=bt709:m=bt709:r=tv,format=yuv420p\" ");
+
+                    // Optionnel : forcer les métadonnées couleurs SDR
+                    sb.Append($"-color_primaries:v:{outVideoIndex} bt709 ");
+                    sb.Append($"-color_trc:v:{outVideoIndex} bt709 ");
+                    sb.Append($"-colorspace:v:{outVideoIndex} bt709 ");
                 }
 
                 outVideoIndex++;

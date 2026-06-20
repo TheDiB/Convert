@@ -161,6 +161,56 @@ namespace Convert.Core
                     if (type == "video")
                     {
                         var video = new VideoStreamInfo();
+
+                        // --- HDR / Dolby Vision detection ---
+
+                        // SDR par défaut
+                        video.HasHDR10 = false;
+                        video.HasHDR10Plus = false;
+                        video.HasDolbyVision = false;
+                        video.DolbyVisionProfile = 0;
+
+                        // 1) HDR10 (PQ + BT2020)
+                        if (stream.TryGetProperty("color_transfer", out var trProp) &&
+                            trProp.GetString() == "smpte2084")
+                        {
+                            video.HasHDR10 = true;
+                        }
+
+                        if (stream.TryGetProperty("color_primaries", out var primProp) &&
+                            primProp.GetString() == "bt2020")
+                        {
+                            video.HasHDR10 = true;
+                        }
+
+                        // 2) HDR10+ (metadata dynamiques)
+                        if (stream.TryGetProperty("side_data_list", out var sideDataList))
+                        {
+                            foreach (var side in sideDataList.EnumerateArray())
+                            {
+                                if (side.TryGetProperty("side_data_type", out var sdtProp))
+                                {
+                                    string sdt = sdtProp.GetString() ?? "";
+
+                                    if (sdt.Contains("HDR10+", StringComparison.OrdinalIgnoreCase) ||
+                                        sdt.Contains("HDR10+ Metadata", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        video.HasHDR10Plus = true;
+                                    }
+
+                                    // 3) Dolby Vision
+                                    if (sdt.Contains("DOVI", StringComparison.OrdinalIgnoreCase) ||
+                                        sdt.Contains("DOVI configuration record", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        video.HasDolbyVision = true;
+
+                                        if (side.TryGetProperty("dv_profile", out var dvProp))
+                                            video.DolbyVisionProfile = dvProp.GetInt32();
+                                    }
+                                }
+                            }
+                        }
+
                         video.Index = index;
                         video.Codec = codec;
                         video.Width = stream.TryGetProperty("width", out var w) ? w.GetInt32() : 0;

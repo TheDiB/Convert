@@ -6,7 +6,15 @@
         Ignore,
         H265_High,
         H264_Medium,
-        H264_Low,        
+        H264_Low,
+    }
+
+    public enum HDRProfile
+    {
+        Keep,       // Conserver tel quel
+        StripDv,    // Supprimer les métadonnées DV (RPU)
+        ForceHdr10, // Idem StripDv, mais sémantique différente (évolutif)
+        ForceSdr    // Tonemapping vers SDR
     }
 
     public class VideoProfileItem

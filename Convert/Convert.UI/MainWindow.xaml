@@ -198,7 +198,53 @@
                             <DataGridTextColumn Header="FPS" Binding="{Binding FPS}" Width="100"/>
                             <DataGridTextColumn Header="Débit (kbps)" Binding="{Binding Bitrate}" Width="120"/>
 
-                            <DataGridTemplateColumn Header="Action" Width="300">
+                            <DataGridTemplateColumn>
+                                <DataGridTemplateColumn.HeaderTemplate>
+                                    <DataTemplate>
+                                        <Grid>
+                                            <TextBlock Text="HDR"/>
+                                        </Grid>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.HeaderTemplate>
+
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Grid>
+                                            <!-- Mode HDR (texte simple) -->
+                                            <TextBlock Text="{Binding HdrLabel}"
+                                                Visibility="{Binding ShowHdrColumn, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+                                            <!-- Mode Dolby Vision (ComboBox) -->
+                                            <ComboBox ItemsSource="{Binding AvailableHDRModes}"
+                                                SelectedValue="{Binding SelectedHDRMode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                SelectedValuePath="Mode"
+                                                DisplayMemberPath="Label"
+                                                Style="{StaticResource MaterialDesignOutlinedComboBox}"                                                
+                                                Visibility="{Binding ShowDolbyVisionColumn, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                        </Grid>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+
+                                <DataGridTemplateColumn.CellEditingTemplate>
+                                    <DataTemplate>
+                                        <Grid>
+                                            <!-- Mode HDR (texte simple) -->
+                                            <TextBlock Text="{Binding HdrLabel}"
+                                               Visibility="{Binding ShowHdrColumn, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+                                            <!-- Mode Dolby Vision (ComboBox) -->
+                                            <ComboBox ItemsSource="{Binding AvailableHDRModes}"
+                                                SelectedValue="{Binding SelectedHDRMode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                SelectedValuePath="Mode"
+                                                DisplayMemberPath="Label"
+                                                Style="{StaticResource MaterialDesignOutlinedComboBox}"                                                
+                                                Visibility="{Binding ShowDolbyVisionColumn, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                        </Grid>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellEditingTemplate>
+                            </DataGridTemplateColumn>
+
+                            <DataGridTemplateColumn Header="Action" Width="250">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <ComboBox ItemsSource="{Binding AvailableProfiles}"
@@ -219,13 +265,11 @@
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellEditingTemplate>
                             </DataGridTemplateColumn>
-
-
                         </DataGrid.Columns>
                     </DataGrid>
                 </TabItem>
 
-                <!-- Onglet SOUS-TITRES (à venir) -->
+                <!-- Onglet SOUS-TITRES -->
                 <TabItem>
                     <TabItem.Header>
                         <StackPanel Orientation="Horizontal">

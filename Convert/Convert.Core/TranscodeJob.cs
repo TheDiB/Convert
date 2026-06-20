@@ -86,7 +86,6 @@ namespace Convert.Core
 
                 Status = "Building command";
 
-                // CHANGEMENT : on récupère args + outputPath
                 var (args, ffmpegOutputPath) = await engine.BuildCommandAsync(Analysis, options);
 
                 Status = "Transcoding";

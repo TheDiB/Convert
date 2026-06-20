@@ -316,6 +316,10 @@ public class MainViewModel : ViewModelBase
             foreach (var track in jobVM.VideoTracks)
                 Options.VideoTrackProfiles[track.Index] = track.SelectedProfile;
 
+            Options.VideoTrackHDRModes.Clear();
+            foreach (var track in jobVM.VideoTracks)
+                Options.VideoTrackHDRModes[track.Index] = track.SelectedHDRMode;
+
             Options.SubtitleTrackProfiles.Clear();
             foreach (var track in jobVM.SubtitleTracks)
                 Options.SubtitleTrackProfiles[track.Index] = track.SelectedProfile;
@@ -542,7 +546,7 @@ public class MainViewModel : ViewModelBase
 
             if (existing == null)
             {
-                SelectedJob.VideoTracks.Add(new VideoTrackViewModel
+                VideoTrackViewModel vm = new VideoTrackViewModel
                 {
                     Index = video.Index,
                     Codec = DicoMaps.VideoCodecMap.TryGetValue(video.Codec, out var pretty)
@@ -552,7 +556,22 @@ public class MainViewModel : ViewModelBase
                     Height = video.Height,
                     FPS = video.FPS,
                     Bitrate = video.Bitrate
-                });
+                };
+
+                // Détection HDR / DV
+                if (video.HasDolbyVision && video.HasHDR10)
+                    vm.Hdr = VideoTrackViewModel.HdrType.DolbyVisionAndHDR10;
+                else if (video.HasDolbyVision)
+                    vm.Hdr = VideoTrackViewModel.HdrType.DolbyVision;
+                else if (video.HasHDR10Plus)
+                    vm.Hdr = VideoTrackViewModel.HdrType.HDR10Plus;
+                else if (video.HasHDR10)
+                    vm.Hdr = VideoTrackViewModel.HdrType.HDR10;
+                else
+                    vm.Hdr = VideoTrackViewModel.HdrType.SDR;
+
+
+                SelectedJob.VideoTracks.Add(vm);
             }
             else
             {
@@ -560,6 +579,17 @@ public class MainViewModel : ViewModelBase
                 existing.Height = video.Height;
                 existing.FPS = video.FPS;
                 existing.Bitrate = video.Bitrate;
+
+                if (video.HasDolbyVision && video.HasHDR10)
+                    existing.Hdr = VideoTrackViewModel.HdrType.DolbyVisionAndHDR10;
+                else if (video.HasDolbyVision)
+                    existing.Hdr = VideoTrackViewModel.HdrType.DolbyVision;
+                else if (video.HasHDR10Plus)
+                    existing.Hdr = VideoTrackViewModel.HdrType.HDR10Plus;
+                else if (video.HasHDR10)
+                    existing.Hdr = VideoTrackViewModel.HdrType.HDR10;
+                else
+                    existing.Hdr = VideoTrackViewModel.HdrType.SDR;
 
                 // NE PAS toucher à existing.Codec
             }

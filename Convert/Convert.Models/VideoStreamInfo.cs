@@ -14,5 +14,10 @@
         public int Width { get; set; }
         public int Height { get; set; }
         public double FPS { get; set; }
+        public bool HasDolbyVision { get; set; }
+        public int DolbyVisionProfile { get; set; }
+        public bool HasHDR10 { get; set; }
+        public bool HasHDR10Plus { get; set; }
+
     }
 }
