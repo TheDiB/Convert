@@ -291,7 +291,7 @@ namespace Convert.Core
                         sb.Append($"-c:a:{outAudioIndex} aac ");
                         sb.Append($"-b:a:{outAudioIndex} 320k ");
                         sb.Append($"-ac:{outAudioIndex} 2 ");
-                        sb.Append($"-af:a:{outAudioIndex} pan=stereo ");
+                        sb.Append($"-channel_layout:{outAudioIndex} 2.0 ");
                         sb.Append($"-metadata:s:a:{outAudioIndex} language={langCode} ");
 
                         baseTitle = $"{langName} AAC 2.0 320 Kbps";
