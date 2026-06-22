@@ -362,6 +362,10 @@
                   ItemsSource="{Binding Jobs}"
                   SelectedItem="{Binding SelectedJob}"
                   AutoGenerateColumns="False">
+                <DataGrid.InputBindings>
+                    <MouseBinding Gesture="LeftDoubleClick"
+                  Command="{Binding SelectedItem.OpenAnalysisCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" />
+                </DataGrid.InputBindings>
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="Fichier" Binding="{Binding FileName, Mode=OneWay}" Width="*"/>
                     <DataGridTextColumn Header="Statut" Binding="{Binding Status, Mode=OneWay}" Width="150"/>

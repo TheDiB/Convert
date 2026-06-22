@@ -1,7 +1,9 @@
 ﻿using Convert.Core;
 using Convert.UI.Services;
+using Convert.UI.Views;
 using System.Collections.ObjectModel;
 using System.Text;
+using System.Windows;
 using System.Windows.Input;
 
 namespace Convert.UI.ViewModels
@@ -35,6 +37,7 @@ namespace Convert.UI.ViewModels
         public ICommand DeleteCommand { get; }
         public ICommand AnalyzeCommand { get; }
         public ICommand TranscodeCommand { get; }
+        public ICommand OpenAnalysisCommand { get; }
 
         public JobViewModel(
             TranscodeJob job,
@@ -64,6 +67,7 @@ namespace Convert.UI.ViewModels
             DeleteCommand = new RelayCommand(_ => _onDelete(this));
             AnalyzeCommand = new RelayCommand(async _ => await _onAnalyze(this));
             TranscodeCommand = new RelayCommand(async _ => await _onTranscode(this));
+            OpenAnalysisCommand = new RelayCommand(_ => OpenAnalysis(), CanOpenAnalysis);
         }
 
         public void AppendLog(string line)
@@ -77,6 +81,15 @@ namespace Convert.UI.ViewModels
         public void RefreshStatus()
         {
             OnPropertyChanged(nameof(Status));
+        }
+
+        private bool CanOpenAnalysis() => Job.Analysis != null && !string.IsNullOrEmpty(Job.Analysis.RawJson);
+        private void OpenAnalysis()
+        {
+            var vm = new AnalysisViewModel(Job.Analysis);
+            var win = new AnalysisWindow(vm);
+            win.Owner = Application.Current.MainWindow;
+            win.Show();
         }
     }
 }

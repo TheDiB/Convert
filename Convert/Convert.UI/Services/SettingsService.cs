@@ -6,6 +6,7 @@ namespace Convert.UI.Services
     public class SettingsService
     {
         private const string FileName = "settings.json";
+        private static readonly string SettingsPath = Path.Combine(AppContext.BaseDirectory, FileName);
 
         public AppSettings Settings { get; private set; }
 
@@ -16,9 +17,9 @@ namespace Convert.UI.Services
 
         public void Load()
         {
-            if (File.Exists(FileName))
+            if (File.Exists(SettingsPath))
             {
-                var json = File.ReadAllText(FileName);
+                var json = File.ReadAllText(SettingsPath);
                 Settings = JsonSerializer.Deserialize<AppSettings>(json);
             }
             else
@@ -35,7 +36,7 @@ namespace Convert.UI.Services
                 WriteIndented = true
             });
 
-            File.WriteAllText(FileName, json);
+            File.WriteAllText(SettingsPath, json);
         }
     }
 }

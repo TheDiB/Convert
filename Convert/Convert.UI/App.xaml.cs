@@ -1,4 +1,8 @@
-﻿using Convert.UI.Services;
+﻿using Convert.Core;
+using Convert.UI.Services;
+using Convert.UI.ViewModels;
+using Convert.UI.Views;
+using System.IO;
 using System.Windows;
 
 namespace Convert.UI
@@ -6,6 +10,8 @@ namespace Convert.UI
     public partial class App : Application
     {
         private SettingsService _settings;
+        private bool _analysisMode = false;
+
 
         protected override async void OnStartup(StartupEventArgs e)
         {
@@ -13,6 +19,34 @@ namespace Convert.UI
 
             _settings = new SettingsService();
             ApplyTheme(_settings.Settings.Theme, _settings.Settings.PrimaryColor);
+
+            if (e.Args.Length > 0)
+            {
+                // Reconstituer le chemin complet
+                var combined = string.Join(" ", e.Args);
+
+                // Essayer tel quel
+                if (File.Exists(combined))
+                {
+                    ShowAnalysisForFile(combined);
+                    return;
+                }
+
+                // Essayer de détecter le fichier en testant les suffixes
+                for (int i = 0; i < e.Args.Length; i++)
+                {
+                    var candidate = string.Join(" ", e.Args.Skip(i));
+                    if (File.Exists(candidate))
+                    {
+                        ShowAnalysisForFile(candidate);
+                        return;
+                    }
+                }
+            }
+
+            // Lancement normal
+            var mw = new MainWindow();
+            mw.Show();
 
             if (_settings.Settings.AutoDownloadFfmpeg)
             {
@@ -99,6 +133,26 @@ namespace Convert.UI
             Resources.MergedDictionaries.Add(defaults);
             Resources.MergedDictionaries.Add(primary);
             Resources.MergedDictionaries.Add(accent);
+        }
+
+        private async void ShowAnalysisForFile(string path)
+        {
+            this._analysisMode = true;
+            var ffprobePath = Path.Combine(AppContext.BaseDirectory, "ffmpeg", "ffprobe.exe");
+            var ffprobe = new FFprobeService(ffprobePath);
+            var result = await ffprobe.AnalyzeAsync(path, new CancellationToken()); // méthode à ajouter si besoin
+            var vm = new AnalysisViewModel(result);
+            var win = new AnalysisWindow(vm);
+
+            vm.RequestClose = () =>
+            {
+                win.Close();
+
+                if (_analysisMode)
+                    Shutdown(); // Quitter l'application proprement
+            };
+
+            win.Show();
         }
     }
 }
